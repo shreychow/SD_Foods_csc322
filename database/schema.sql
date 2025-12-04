@@ -34,3 +34,34 @@ ADD COLUMN employment_status ENUM('active','demoted','fired') DEFAULT 'active';
 
 /* CUSTOMER CAN : LOGIN, BROSE, ORDER, RATE, COMPLAIN, RECEIVE WARNING, BE BLACKLISTED, 
    BE DOWNGRADED (OF VIP), QUERY, ADD FUNDS, BIDDING? these should all be tables */
+
+
+/* COMPLAINTS TABLE */
+CREATE TABLE complaints (
+    complaint_id INT AUTO_INCREMENT PRIMARY KEY,
+    
+    filer_customer_id INT,
+    filer_employee_id INT, 
+
+    target_customer_id INT,
+    target_employee_id INT,
+
+    message VARCHAR(500) NOT NULL,
+    resolved BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (filer_customer_id) REFERENCES customers(customer_id),
+    FOREIGN KEY (filer_employee_id) REFERENCES employee(employee_id),
+
+    FOREIGN KEY (target_customer_id) REFERENCES customers(customer_id),
+    FOREIGN KEY (target_employee_id) REFERENCES employee(employee_id)
+);
+
+/* WARNING Table */
+CREATE TABLE warnings (
+    warning_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_type ENUM('customer','vip','chef','delivery'),
+    user_id INT NOT NULL,
+    reason VARCHAR(300),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
