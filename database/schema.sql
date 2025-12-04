@@ -23,6 +23,7 @@ CREATE TABLE employee(
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+/* MODIFY EMPLOYEE TABLE TO ADD ROLE, SALARY, WARNINGS, EMPLOYMENT STATUS */
 ALTER TABLE employee 
 ADD COLUMN role ENUM('chef','delivery','manager') NOT NULL DEFAULT 'chef',
 ADD COLUMN salary DECIMAL(10,2) DEFAULT 1000,
@@ -66,6 +67,7 @@ CREATE TABLE warnings (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+/* MODIFIED EMPLOYEE TABLE */
 ALTER TABLE employee
 ADD COLUMN complaints INT DEFAULT 0;
 
@@ -77,6 +79,7 @@ ALTER TABLE complaints
     DROP COLUMN resolved,
     DROP COLUMN message;
 
+/* Adding new columns to complaints table */
 ALTER TABLE complaints
     ADD COLUMN against_id INT NOT NULL AFTER filer_customer_id,
     ADD COLUMN target_type ENUM('customer','chef','delivery') NOT NULL AFTER against_id,
