@@ -65,3 +65,49 @@ CREATE TABLE warnings (
     reason VARCHAR(300),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE employee
+ADD COLUMN complaints INT DEFAULT 0;
+
+/* MODIFIED COMPLAINTS TABLE */
+ALTER TABLE complaints
+    DROP COLUMN filer_employee_id,
+    DROP COLUMN target_customer_id,
+    DROP COLUMN target_employee_id,
+    DROP COLUMN resolved,
+    DROP COLUMN message;
+
+ALTER TABLE complaints
+    ADD COLUMN against_id INT NOT NULL AFTER filer_customer_id,
+    ADD COLUMN target_type ENUM('customer','chef','delivery') NOT NULL AFTER against_id,
+    ADD COLUMN complaint_text VARCHAR(500) NOT NULL AFTER target_type,
+    ADD COLUMN status ENUM('pending','approved','rejected') DEFAULT 'pending' AFTER complaint_text;
+
+
+SELECT constraint_name, table_name, column_name
+FROM information_schema.key_column_usage
+WHERE table_name = 'complaints';
+-- this query helps to find foreign keys in the complaints table for cleanup if needed
+
+ALTER TABLE complaints DROP FOREIGN KEY complaints_ibfk_1;
+ALTER TABLE complaints DROP FOREIGN KEY complaints_ibfk_2;
+ALTER TABLE complaints DROP FOREIGN KEY complaints_ibfk_3;
+ALTER TABLE complaints DROP FOREIGN KEY complaints_ibfk_4;
+-- dropping foreign keys that are no longer needed after modification of complaints table
+
+ALTER TABLE complaints
+DROP COLUMN filer_customer_id,
+DROP COLUMN filer_employee_id,
+DROP COLUMN target_customer_id,
+DROP COLUMN target_employee_id,
+DROP COLUMN message,
+DROP COLUMN resolved;
+-- cleaning up old columns from complaints table after modification
+
+ALTER TABLE complaints
+ADD COLUMN filer_id INT,
+ADD COLUMN against_id INT,
+ADD COLUMN target_type ENUM('customer','chef','delivery') NOT NULL,
+ADD COLUMN complaint_text VARCHAR(500),
+ADD COLUMN status ENUM('pending','approved','rejected') DEFAULT 'pending';
+-- re-adding necessary columns to complaints table after cleanup
