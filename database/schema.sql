@@ -23,6 +23,13 @@ CREATE TABLE employee(
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE employee 
+ADD COLUMN role ENUM('chef','delivery','manager') NOT NULL DEFAULT 'chef',
+ADD COLUMN salary DECIMAL(10,2) DEFAULT 1000,
+ADD COLUMN warnings INT DEFAULT 0,
+ADD COLUMN employment_status ENUM('active','demoted','fired') DEFAULT 'active';
+
+
 /* ALL PARTICIPANTS CAN LOGIN */
 
 /* CUSTOMER CAN : LOGIN, BROSE, ORDER, RATE, COMPLAIN, RECEIVE WARNING, BE BLACKLISTED, 
