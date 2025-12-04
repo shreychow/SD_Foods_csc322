@@ -114,3 +114,14 @@ ADD COLUMN target_type ENUM('customer','chef','delivery') NOT NULL,
 ADD COLUMN complaint_text VARCHAR(500),
 ADD COLUMN status ENUM('pending','approved','rejected') DEFAULT 'pending';
 -- re-adding necessary columns to complaints table after cleanup
+
+ALTER TABLE customers
+ADD COLUMN warnings INT DEFAULT 0,
+ADD COLUMN is_vip BOOLEAN DEFAULT FALSE,
+ADD COLUMN total_spent DECIMAL(10,2) DEFAULT 0;
+-- adding new columns to customers table for warnings, VIP status, and total amount spent
+
+ALTER TABLE customers
+ADD COLUMN balance DECIMAL(10,2) DEFAULT 0,
+ADD COLUMN active BOOLEAN DEFAULT TRUE;
+-- adding balance and active status to customers table
