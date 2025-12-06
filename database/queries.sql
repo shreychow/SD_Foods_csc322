@@ -95,13 +95,13 @@ UPDATE menu_items SET is_time_limited = TRUE WHERE item_id=1; -- update is time 
 UPDATE menu_items SET in_stock = FALSE WHERE item_id=1; -- item sold out 
 UPDATE menu_items SET image_url = @image_url2 WHERE item_id=1; -- cahnge picture 
 UPDATE menu_items SET updated_by = 4 WHERE item_id=1; -- update who updated last 
-UPDATE menu_items SET dietary_restrictions='Contains:Shellfish (Mollusk/Squid), Gluten (Rustic Bread). Contains Alcohol (White Wine).' WHERE item_id=1; -- cahnge allegrns 
+UPDATE menu_items SET dietary_restrictions='Contains: Shellfish (Mollusk/Squid), Gluten (Rustic Bread). Contains Alcohol (White Wine).' WHERE item_id=1; -- cahnge allegrns 
 
 -- RESERVATION TABLE DELETE QUERY (cancel reservation)
 DELETE FROM menu_items WHERE item_id = 1;
 
 
---  INSERT CATEGORY TABLE QUERY (Create new cateofory)
+--  INSERT CATEGORY TABLE QUERY (Create new category)
 INSERT INTO category (category_type)
 VALUES (
     'Dessert'
@@ -113,8 +113,8 @@ SELECT * FROM category WHERE name = 'Dessert'; -- Get category by name
 ---  CATEGORY TABLE UPDATE QUERIES(update menu items) --- 
 UPDATE category SET category_type = 'Appitizer' WHERE category_id=1; -- update category type
 
--- RESERVATION TABLE DELETE QUERY (cancel reservation)
-DELETE FROM menu_items WHERE item_id = 1;
+-- CATEGORY TABLE DELETE QUERY (cancel reservation)
+DELETE FROM category WHERE category_id = 1;
 
 
 
