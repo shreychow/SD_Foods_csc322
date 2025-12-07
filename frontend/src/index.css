@@ -1,3 +1,5 @@
+/* ========== Global reset ========== */
+
 *,
 *::before,
 *::after {
@@ -12,15 +14,26 @@ body {
   color: #111827;
 }
 
-/* ---------- Auth pages ---------- */
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+/* ================================
+   AUTH PAGES (Login / Register)
+   ================================ */
 
 .auth-page-light {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40px 16px;
+  justify-content: flex-start;
+  padding: 48px 16px 32px;
 }
+
+/* Brand header */
 
 .brand-header {
   text-align: center;
@@ -28,22 +41,22 @@ body {
 }
 
 .brand-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 22px;
+  width: 72px;
+  height: 72px;
+  border-radius: 24px;
   margin: 0 auto 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #f97316, #fb923c);
   color: #fff7ed;
-  font-size: 1.8rem;
-  box-shadow: 0 12px 30px rgba(248, 113, 113, 0.45);
+  font-size: 2rem;
+  box-shadow: 0 18px 40px rgba(248, 113, 113, 0.45);
 }
 
 .brand-name {
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   color: #b45309;
 }
 
@@ -52,25 +65,28 @@ body {
   color: #6b7280;
 }
 
+/* Auth card */
+
 .auth-card-simple {
   width: 100%;
-  max-width: 420px;
+  max-width: 540px;
   background: #ffffff;
-  border-radius: 24px;
-  padding: 22px 22px 20px;
+  border-radius: 26px;
+  padding: 24px 26px 22px;
   box-shadow:
-    0 24px 60px rgba(248, 113, 113, 0.18),
-    0 0 0 1px rgba(249, 250, 251, 0.9);
+    0 30px 80px rgba(248, 113, 113, 0.2),
+    0 0 0 1px rgba(243, 244, 246, 0.9);
 }
 
 .auth-title-main {
   margin: 0 0 4px;
-  font-size: 1.3rem;
+  font-size: 1.4rem;
+  font-weight: 700;
   color: #111827;
 }
 
 .auth-subtitle-main {
-  margin: 0 0 16px;
+  margin: 0 0 18px;
   font-size: 0.9rem;
   color: #6b7280;
 }
@@ -81,7 +97,7 @@ body {
   display: flex;
   background: #f3f4f6;
   border-radius: 999px;
-  padding: 3px;
+  padding: 4px;
   margin-bottom: 18px;
 }
 
@@ -90,19 +106,20 @@ body {
   border: none;
   background: transparent;
   border-radius: 999px;
-  padding: 6px 12px;
+  padding: 7px 12px;
   font-size: 0.85rem;
   cursor: pointer;
   color: #6b7280;
+  transition: background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
 }
 
 .tab-btn.active {
   background: #ffffff;
   color: #111827;
-  box-shadow: 0 2px 6px rgba(148, 163, 184, 0.6);
+  box-shadow: 0 2px 7px rgba(148, 163, 184, 0.75);
 }
 
-/* Form elements */
+/* Form */
 
 .form {
   display: flex;
@@ -116,17 +133,23 @@ body {
   gap: 4px;
   font-size: 0.85rem;
   color: #4b5563;
+  text-align: left;
 }
 
 .input {
-  padding: 8px 10px;
-  border-radius: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
   border: 1px solid #e5e7eb;
   font-size: 0.93rem;
+  background: #f9fafb;
 }
 
 .input.textarea {
   resize: vertical;
+}
+
+.input::placeholder {
+  color: #9ca3af;
 }
 
 .input:focus {
@@ -140,22 +163,24 @@ body {
 .btn {
   border: none;
   border-radius: 999px;
-  padding: 9px 16px;
+  padding: 10px 16px;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: transform 0.08s ease, box-shadow 0.08s ease,
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.12s ease,
     background 0.15s ease;
 }
 
 .btn-primary {
   background: linear-gradient(135deg, #fb923c, #f97316);
   color: white;
-  box-shadow: 0 12px 30px rgba(249, 115, 22, 0.5);
+  box-shadow: 0 14px 32px rgba(249, 115, 22, 0.55);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 16px 40px rgba(249, 115, 22, 0.6);
+  box-shadow: 0 18px 40px rgba(249, 115, 22, 0.65);
 }
 
 .btn:disabled {
@@ -168,6 +193,8 @@ body {
 .w-100 {
   width: 100%;
 }
+
+/* Alerts */
 
 .alert {
   margin-bottom: 10px;
@@ -183,12 +210,7 @@ body {
   color: #b91c1c;
 }
 
-.auth-footer-note {
-  margin-top: 10px;
-  font-size: 0.8rem;
-  color: #9ca3af;
-  text-align: center;
-}
+/* Small text link-style button */
 
 .link-button {
   background: none;
@@ -201,7 +223,9 @@ body {
   text-decoration: underline;
 }
 
-/* ---------- Dashboard styles (keep your app working) ---------- */
+/* ================================
+   CUSTOMER DASHBOARD / MAIN APP
+   ================================ */
 
 .page {
   min-height: 100vh;
@@ -210,18 +234,20 @@ body {
   background: #f3f4f6;
 }
 
+/* top bar used in dashboards (if you use it) */
 .topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 10px 22px;
-  background: #111827;
-  color: #f9fafb;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .logo {
   margin: 0;
   font-size: 1.2rem;
+  color: #b45309;
 }
 
 .topbar-left {
@@ -236,11 +262,12 @@ body {
   gap: 8px;
   margin-left: 14px;
   font-size: 0.85rem;
+  color: #4b5563;
 }
 
 .badge {
   background: #f9731620;
-  color: #fed7aa;
+  color: #b45309;
   padding: 2px 8px;
   border-radius: 999px;
   border: 1px solid #fed7aa;
@@ -252,12 +279,14 @@ body {
   opacity: 0.9;
 }
 
+/* main layout for menu + cart + other sections */
+
 .layout {
   flex: 1;
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 18px;
-  padding: 18px 22px;
+  padding: 18px 22px 26px;
 }
 
 .section-header {
@@ -268,9 +297,13 @@ body {
 }
 
 .menu-section,
-.cart-section {
+.cart-section,
+.feedback-section,
+.finance-section {
   background: transparent;
 }
+
+/* cards & grid */
 
 .grid {
   display: grid;
@@ -284,6 +317,8 @@ body {
   padding: 12px;
   box-shadow: 0 10px 25px rgba(148, 163, 184, 0.35);
 }
+
+/* dish cards */
 
 .dish-card {
   padding: 0;
@@ -321,7 +356,7 @@ body {
   font-size: 0.78rem;
 }
 
-/* Cart */
+/* cart */
 
 .cart-section h2 {
   margin-top: 0;
@@ -378,11 +413,27 @@ body {
   font-size: 0.9rem;
 }
 
-/* ---------- Responsive ---------- */
+/* generic empty state */
 
-@media (max-width: 768px) {
+.empty-state {
+  text-align: center;
+  padding: 20px 10px;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+/*  RESPONSIVE */
+
+@media (max-width: 960px) {
   .layout {
     grid-template-columns: 1fr;
-    padding: 14px;
+    padding: 16px 14px 22px;
   }
 }
+
+@media (max-width: 640px) {
+  .auth-card-simple {
+    padding-inline: 18px;
+  }
+}
+

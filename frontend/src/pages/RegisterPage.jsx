@@ -1,84 +1,95 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import client from '../api/client'
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import client from "../api/client";
+import { UtensilsCrossed } from "lucide-react";
 
 export default function RegisterPage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [form, setForm] = useState({
-    username: '',
-    password: '',
-    confirmPassword: '',
-    name: '',
-    email: '',
-    phone: '',
-    home_address: '',
-  })
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [loading, setLoading] = useState(false)
+    username: "",
+    password: "",
+    confirmPassword: "",
+    name: "",
+    email: "",
+    phone: "",
+    street: "",
+    city: "",
+    state: "",
+    zip: "",
+  });
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setForm(prev => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setSuccess('')
+    e.preventDefault();
+    setError("");
+    setSuccess("");
 
     if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match.')
-      return
+      setError("Passwords do not match.");
+      return;
     }
 
-    setLoading(true)
+    const home_address = `${form.street}, ${form.city}, ${form.state} ${form.zip}`.trim();
+
+    setLoading(true);
 
     try {
-      await client.post('/auth/register', {
+      await client.post("/auth/register", {
         username: form.username,
         password: form.password,
         name: form.name,
         email: form.email,
         phone: form.phone,
-        home_address: form.home_address,
-      })
+        home_address, // send combined address string to backend
+      });
 
-      setSuccess('Account created! Redirecting to login…')
-      setTimeout(() => navigate('/login'), 1200)
+      setSuccess("Account created! Redirecting to login…");
+      setTimeout(() => navigate("/login"), 1200);
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed.')
+      setError(err.response?.data?.error || "Registration failed.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="auth-page-light">
+      {/* Logo / Brand header */}
       <div className="brand-header">
-        <div className="brand-icon">🍽️</div>
+        <div className="brand-icon">
+          <UtensilsCrossed />
+        </div>
         <div className="brand-name">SD Foods</div>
         <div className="brand-tagline">Your favorite food, delivered fast</div>
       </div>
 
+      {/* Card */}
       <div className="auth-card-simple">
         <h2 className="auth-title-main">Create an account</h2>
         <p className="auth-subtitle-main">
-          Sign up once, and checkout becomes much faster.
+          Sign up once and checkout becomes much faster.
         </p>
 
+        {/* Tabs */}
         <div className="tab-switch">
           <button
             type="button"
             className="tab-btn"
-            onClick={() => navigate('/login')}
+            onClick={() => navigate("/login")}
           >
             Login
           </button>
           <button
             type="button"
             className="tab-btn active"
-            onClick={() => navigate('/register')}
+            onClick={() => navigate("/register")}
           >
             Register
           </button>
@@ -121,14 +132,52 @@ export default function RegisterPage() {
             />
           </label>
 
+          {/* Address broken into components */}
           <label className="form-label">
-            Home Address
-            <textarea
-              className="input textarea"
-              name="home_address"
-              value={form.home_address}
+            Street Address
+            <input
+              className="input"
+              name="street"
+              value={form.street}
               onChange={handleChange}
-              rows={2}
+              placeholder="123 Main St Apt 4B"
+              required
+            />
+          </label>
+
+          <div className="form-row-two">
+            <label className="form-label">
+              City
+              <input
+                className="input"
+                name="city"
+                value={form.city}
+                onChange={handleChange}
+                required
+              />
+            </label>
+
+            <label className="form-label">
+              State
+              <input
+                className="input"
+                name="state"
+                value={form.state}
+                onChange={handleChange}
+                placeholder="NY"
+                required
+              />
+            </label>
+          </div>
+
+          <label className="form-label">
+            Zip Code
+            <input
+              className="input"
+              name="zip"
+              value={form.zip}
+              onChange={handleChange}
+              placeholder="10031"
               required
             />
           </label>
@@ -173,21 +222,10 @@ export default function RegisterPage() {
             type="submit"
             disabled={loading}
           >
-            {loading ? 'Creating account…' : 'Register'}
+            {loading ? "Creating account…" : "Register"}
           </button>
         </form>
-
-        <p className="auth-footer-note">
-          Already have an account?{' '}
-          <button
-            type="button"
-            className="link-button"
-            onClick={() => navigate('/login')}
-          >
-            Go to login
-          </button>
-        </p>
       </div>
     </div>
-  )
+  );
 }
