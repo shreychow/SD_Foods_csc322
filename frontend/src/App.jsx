@@ -3,6 +3,7 @@ import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
 import CustomerDashboard from './pages/CustomerDashboard.jsx'
 import MenuPage from "./pages/MenuPage.jsx"; 
+import OrderCheckout from './pages/OrderCheckout.jsx';
 
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/customer" element={<CustomerDashboard />} />
       <Route path="/menu" element={<MenuPage />} />
+      <Route path="/checkout" element={<OrderCheckout />} />
     </Routes>
   )
 }
