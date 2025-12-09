@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { UtensilsCrossed, UserPlus } from "lucide-react";
 import client from "../api/client";
-import { UtensilsCrossed } from "lucide-react";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -15,31 +15,27 @@ export default function RegisterPage() {
     street: "",
     city: "",
     state: "",
-    zip: "",
+    zip: ""
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
-
+    
     if (form.password !== form.confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
-
-    const home_address = `${form.street}, ${form.city}, ${form.state} ${form.zip}`.trim();
-
+    
     setLoading(true);
-
     try {
       await client.post("/auth/register", {
         username: form.username,
@@ -47,9 +43,8 @@ export default function RegisterPage() {
         name: form.name,
         email: form.email,
         phone: form.phone,
-        home_address, // send combined address string to backend
+        home_address: `${form.street}, ${form.city}, ${form.state} ${form.zip}`.trim()
       });
-
       setSuccess("Account created! Redirecting to login…");
       setTimeout(() => navigate("/login"), 1200);
     } catch (err) {
@@ -60,171 +55,197 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="auth-page-light">
-      {/* Logo / Brand header */}
-      <div className="brand-header">
-        <div className="brand-icon">
-          <UtensilsCrossed />
-        </div>
-        <div className="brand-name">SD Foods</div>
-        <div className="brand-tagline">Your favorite food, delivered fast</div>
-      </div>
-
-      {/* Card */}
-      <div className="auth-card-simple">
-        <h2 className="auth-title-main">Create an account</h2>
-        <p className="auth-subtitle-main">
-          Sign up once and checkout becomes much faster.
-        </p>
-
-        {/* Tabs */}
-        <div className="tab-switch">
-          <button
-            type="button"
-            className="tab-btn"
-            onClick={() => navigate("/login")}
-          >
-            Login
-          </button>
-          <button
-            type="button"
-            className="tab-btn active"
-            onClick={() => navigate("/register")}
-          >
-            Register
-          </button>
+    <div className="page-center">
+      <div className="container-md">
+        {/* Brand Header */}
+        <div style={{ textAlign: "center", marginBottom: "40px" }}>
+          <div className="brand-logo" style={{ width: "70px", height: "70px" }}>
+            <UtensilsCrossed size={36} />
+          </div>
+          <h1 className="title-xl" style={{ fontSize: "2.2rem" }}>SD FOODS</h1>
+          <p className="tagline" style={{ fontSize: "0.85rem" }}>
+            Your favorite food, delivered fast
+          </p>
         </div>
 
-        {error && <div className="alert alert-error">{error}</div>}
-        {success && <div className="alert">{success}</div>}
+        {/* Auth Card */}
+        <div className="card" style={{ padding: "40px" }}>
+          <h2 className="title-lg" style={{ fontSize: "1.6rem" }}>Create Account</h2>
+          <p className="subtitle" style={{ fontSize: "0.8rem" }}>
+            Sign up once and checkout becomes much faster
+          </p>
 
-        <form onSubmit={handleSubmit} className="form">
-          <label className="form-label">
-            Full Name
-            <input
-              className="input"
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              required
-            />
-          </label>
-
-          <label className="form-label">
-            Email
-            <input
-              type="email"
-              className="input"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              required
-            />
-          </label>
-
-          <label className="form-label">
-            Phone (optional)
-            <input
-              className="input"
-              name="phone"
-              value={form.phone}
-              onChange={handleChange}
-            />
-          </label>
-
-          {/* Address broken into components */}
-          <label className="form-label">
-            Street Address
-            <input
-              className="input"
-              name="street"
-              value={form.street}
-              onChange={handleChange}
-              placeholder="123 Main St Apt 4B"
-              required
-            />
-          </label>
-
-          <div className="form-row-two">
-            <label className="form-label">
-              City
-              <input
-                className="input"
-                name="city"
-                value={form.city}
-                onChange={handleChange}
-                required
-              />
-            </label>
-
-            <label className="form-label">
-              State
-              <input
-                className="input"
-                name="state"
-                value={form.state}
-                onChange={handleChange}
-                placeholder="NY"
-                required
-              />
-            </label>
+          {/* Tabs */}
+          <div className="tabs">
+            <button type="button" className="tab" onClick={() => navigate("/login")}>
+              Login
+            </button>
+            <button type="button" className="tab active">Register</button>
           </div>
 
-          <label className="form-label">
-            Zip Code
-            <input
-              className="input"
-              name="zip"
-              value={form.zip}
-              onChange={handleChange}
-              placeholder="10031"
-              required
-            />
-          </label>
+          {/* Alerts */}
+          {error && <div className="alert alert-error">{error}</div>}
+          {success && <div className="alert alert-success">{success}</div>}
 
-          <label className="form-label">
-            Username
-            <input
-              className="input"
-              name="username"
-              value={form.username}
-              onChange={handleChange}
-              required
-            />
-          </label>
+          {/* Register Form */}
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label className="form-label">Full Name</label>
+              <input
+                className="input"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <label className="form-label">
-            Password
-            <input
-              type="password"
-              className="input"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              required
-            />
-          </label>
+            <div className="form-group">
+              <label className="form-label">Email</label>
+              <input
+                type="email"
+                className="input"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <label className="form-label">
-            Confirm Password
-            <input
-              type="password"
-              className="input"
-              name="confirmPassword"
-              value={form.confirmPassword}
-              onChange={handleChange}
-              required
-            />
-          </label>
+            <div className="form-group">
+              <label className="form-label">Phone (Optional)</label>
+              <input
+                className="input"
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+                placeholder="(555) 123-4567"
+              />
+            </div>
 
-          <button
-            className="btn btn-primary w-100"
-            type="submit"
-            disabled={loading}
-          >
-            {loading ? "Creating account…" : "Register"}
-          </button>
-        </form>
+            <div className="form-group">
+              <label className="form-label">Street Address</label>
+              <input
+                className="input"
+                name="street"
+                value={form.street}
+                onChange={handleChange}
+                placeholder="123 Main St Apt 4B"
+                required
+              />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "15px" }}>
+              <div className="form-group">
+                <label className="form-label">City</label>
+                <input
+                  className="input"
+                  name="city"
+                  value={form.city}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">State</label>
+                <input
+                  className="input"
+                  name="state"
+                  value={form.state}
+                  onChange={handleChange}
+                  placeholder="NY"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Zip Code</label>
+              <input
+                className="input"
+                name="zip"
+                value={form.zip}
+                onChange={handleChange}
+                placeholder="10031"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Username</label>
+              <input
+                className="input"
+                name="username"
+                value={form.username}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Password</label>
+              <input
+                type="password"
+                className="input"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Confirm Password</label>
+              <input
+                type="password"
+                className="input"
+                name="confirmPassword"
+                value={form.confirmPassword}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <button type="submit" className="btn btn-primary w-full" disabled={loading}>
+              {loading ? "Creating account…" : (
+                <>
+                  <UserPlus size={18} />
+                  Register
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Login Link */}
+          <p className="text-small text-center text-muted" style={{ marginTop: "20px" }}>
+            Already have an account?{" "}
+            <button
+              type="button"
+              onClick={() => navigate("/login")}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#f97316",
+                cursor: "pointer",
+                fontSize: "0.85rem",
+                fontWeight: "500",
+                textDecoration: "underline"
+              }}
+            >
+              Login here
+            </button>
+          </p>
+        </div>
+
+        {/* Footer */}
+        <p className="text-center text-muted" style={{ 
+          marginTop: "25px", 
+          fontSize: "0.75rem", 
+          letterSpacing: "2px" 
+        }}>
+          © 2024 SD FOODS
+        </p>
       </div>
     </div>
   );
