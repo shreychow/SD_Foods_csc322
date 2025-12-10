@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ShoppingCart, Search, ArrowLeft, Star } from "lucide-react";
+import { ShoppingCart, Search, ArrowLeft, Star, LogIn } from "lucide-react";
 
 export default function MenuPage() {
   const navigate = useNavigate();
@@ -8,6 +8,7 @@ export default function MenuPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [cart, setCart] = useState([]);
+  const [customer, setCustomer] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -21,6 +22,12 @@ export default function MenuPage() {
   ];
 
   useEffect(() => {
+    const stored = localStorage.getItem("customer");
+    if (stored) {
+      setCustomer(JSON.parse(stored));
+    }
+    // Don't redirect - allow visitors to browse
+
     const storedCart = localStorage.getItem("cart");
     if (storedCart) setCart(JSON.parse(storedCart));
   }, []);
@@ -30,6 +37,12 @@ export default function MenuPage() {
   };
 
   const addToCart = (item) => {
+    if (!customer) {
+      alert("Please login to place orders!");
+      navigate("/login");
+      return;
+    }
+
     const quantity = quantities[item.id] || 1;
     const storedCart = localStorage.getItem("cart");
     let currentCart = storedCart ? JSON.parse(storedCart) : [];
@@ -61,15 +74,43 @@ export default function MenuPage() {
     <div className="page">
       {/* Top Bar */}
       <div className="card card-compact flex-between mb-3">
-        <button className="btn btn-secondary" onClick={() => navigate("/customer")}>
+        <button className="btn btn-secondary" onClick={() => navigate(customer ? "/customer" : "/")}>
           <ArrowLeft size={18} /> Back
         </button>
         <h2 className="title-md" style={{ margin: 0 }}>Our Menu</h2>
-        <button className="btn btn-primary" onClick={() => navigate("/checkout")} style={{ position: "relative" }}>
-          <ShoppingCart size={18} /> Cart
-          {cartItemCount > 0 && <span className="cart-badge">{cartItemCount}</span>}
-        </button>
+        {customer ? (
+          <button className="btn btn-primary" onClick={() => navigate("/checkout")} style={{ position: "relative" }}>
+            <ShoppingCart size={18} /> Cart
+            {cartItemCount > 0 && <span className="cart-badge">{cartItemCount}</span>}
+          </button>
+        ) : (
+          <button className="btn btn-primary" onClick={() => navigate("/login")}>
+            <LogIn size={18} /> Login to Order
+          </button>
+        )}
       </div>
+
+      {/* Visitor Notice */}
+      {!customer && (
+        <div className="alert alert-info mb-3">
+          <p style={{ margin: 0 }}>
+            Browsing as a visitor. <strong>Login or register</strong> to place orders!{" "}
+            <button
+              onClick={() => navigate("/register")}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#f97316",
+                textDecoration: "underline",
+                cursor: "pointer",
+                fontWeight: "600"
+              }}
+            >
+              Apply now
+            </button>
+          </p>
+        </div>
+      )}
 
       {/* Success Message */}
       {showSuccess && (
@@ -167,16 +208,27 @@ export default function MenuPage() {
                       <button className="btn-icon" onClick={() => handleQuantityChange(item.id, 1)}>
                         +
                       </button>
-                      <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => addToCart(item)}>
+                      <button 
+                        className="btn btn-primary" 
+                        style={{ flex: 1 }} 
+                        onClick={() => addToCart(item)}
+                      >
                         Add to Cart
                       </button>
                     </>
                   ) : (
                     <button
                       className="btn btn-primary w-full"
-                      onClick={() => setQuantities((prev) => ({ ...prev, [item.id]: 1 }))}
+                      onClick={() => {
+                        if (!customer) {
+                          alert("Please login to place orders!");
+                          navigate("/login");
+                        } else {
+                          setQuantities((prev) => ({ ...prev, [item.id]: 1 }));
+                        }
+                      }}
                     >
-                      Add to Cart
+                      {customer ? "Add to Cart" : "Login to Order"}
                     </button>
                   )}
                 </div>

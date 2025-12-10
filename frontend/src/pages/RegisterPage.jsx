@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { UtensilsCrossed, UserPlus } from "lucide-react";
+import { UtensilsCrossed, UserPlus, ArrowLeft } from "lucide-react";
 import client from "../api/client";
 
 export default function RegisterPage() {
@@ -56,6 +56,15 @@ export default function RegisterPage() {
 
   return (
     <div className="page-center">
+      {/* Back Button */}
+      <button 
+        onClick={() => navigate("/")} 
+        className="btn btn-ghost btn-sm"
+        style={{ position: "absolute", top: "20px", left: "20px" }}
+      >
+        <ArrowLeft size={16} /> Back to Home
+      </button>
+
       <div className="container-md">
         {/* Brand Header */}
         <div style={{ textAlign: "center", marginBottom: "40px" }}>

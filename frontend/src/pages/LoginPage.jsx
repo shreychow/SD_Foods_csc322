@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { UtensilsCrossed, LogIn } from "lucide-react";
+import { UtensilsCrossed, LogIn, ArrowLeft } from "lucide-react";
 import client from "../api/client";
 
 export default function LoginPage() {
@@ -54,6 +54,15 @@ export default function LoginPage() {
 
   return (
     <div className="page-center">
+      {/* Back Button */}
+      <button 
+        onClick={() => navigate("/")} 
+        className="btn btn-ghost btn-sm"
+        style={{ position: "absolute", top: "20px", left: "20px" }}
+      >
+        <ArrowLeft size={16} /> Back to Home
+      </button>
+
       <div className="container-sm">
         {/* Brand Header */}
         <div style={{ textAlign: "center", marginBottom: "50px" }}>

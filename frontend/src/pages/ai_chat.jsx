@@ -13,17 +13,17 @@ export default function ChatPage() {
 
   useEffect(() => {
     const stored = localStorage.getItem("customer");
-    if (!stored) {
-      navigate("/login");
-      return;
+    if (stored) {
+      setCustomer(JSON.parse(stored));
     }
-    setCustomer(JSON.parse(stored));
+    // Don't redirect - allow visitors to use chat
+    
     setMessages([{
       role: "assistant",
       content: "Hello! I'm your AI assistant. Ask me anything about our restaurant, menu, delivery, or place an order!",
       timestamp: new Date(),
     }]);
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -40,7 +40,7 @@ export default function ChatPage() {
     try {
       const response = await client.post("/chat/", {
         message: input.trim(),
-        customer_id: customer?.customer_id || customer?.id,
+        customer_id: customer?.customer_id || customer?.id || null, // null for visitors
       });
 
       setMessages((prev) => [...prev, {
@@ -67,7 +67,7 @@ export default function ChatPage() {
       await client.post("/chat/rate", {
         message_id: messageId,
         rating: rating,
-        customer_id: customer?.customer_id || customer?.id,
+        customer_id: customer?.customer_id || customer?.id || null,
       });
       setMessages((prev) => prev.map((msg) => msg.messageId === messageId ? { ...msg, rated: rating } : msg));
     } catch (error) {
@@ -75,13 +75,11 @@ export default function ChatPage() {
     }
   };
 
-  if (!customer) return <div>Loading...</div>;
-
   return (
     <div className="page" style={{ padding: 0, display: "flex", flexDirection: "column" }}>
       {/* Header */}
       <div className="navbar">
-        <button onClick={() => navigate("/customer")} className="btn btn-ghost btn-sm">
+        <button onClick={() => navigate(customer ? "/customer" : "/")} className="btn btn-ghost btn-sm">
           <ArrowLeft size={16} /> Back
         </button>
         <div className="text-center">
@@ -91,8 +89,32 @@ export default function ChatPage() {
         <div style={{ width: "80px" }} />
       </div>
 
+      {/* Visitor Notice */}
+      {!customer && (
+        <div style={{ padding: "0 20px", paddingTop: "100px" }}>
+          <div className="alert alert-info">
+            <p style={{ margin: 0 }}>
+              Chatting as a visitor. <strong>Login or register</strong> to place orders!{" "}
+              <button
+                onClick={() => navigate("/register")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#f97316",
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  fontWeight: "600"
+                }}
+              >
+                Register now
+              </button>
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Messages */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "150px 20px 20px", display: "flex", justifyContent: "center" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: customer ? "150px 20px 20px" : "20px 20px 20px", display: "flex", justifyContent: "center" }}>
         <div className="container-md" style={{ width: "100%" }}>
           {messages.map((msg, idx) => (
             <div key={idx} className="mb-3" style={{ display: "flex", gap: "15px", flexDirection: msg.role === "user" ? "row-reverse" : "row" }}>
