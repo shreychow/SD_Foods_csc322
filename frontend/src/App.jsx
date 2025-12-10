@@ -10,8 +10,10 @@ import MenuPage from "./pages/MenuPage.jsx";
 import OrderCheckout from './pages/OrderCheckout.jsx';
 import Wallet from './pages/Wallet.jsx';
 import Chat from './pages/ai_chat.jsx';
+import Feedback from './pages/feedback.jsx';
 
-// Your OrderHistory import
+
+// OrderHistory import
 import OrderHistory from "./pages/OrderHistory.jsx";
 
 function OrderHistoryWrapper() {
@@ -72,7 +74,7 @@ export default function App() {
       <Route path="/checkout" element={<OrderCheckout />} />
       <Route path="/wallet" element={<Wallet />} />
       <Route path="/chat" element={<Chat />} />
-
+      <Route path="/feedback" element={<Feedback />} />
       {/* Your order history route */}
       <Route path="/orders" element={<OrderHistoryWrapper />} />
     </Routes>

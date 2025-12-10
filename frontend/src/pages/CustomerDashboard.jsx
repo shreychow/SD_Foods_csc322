@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -12,6 +11,7 @@ import {
   Star,
   Clock,
   Heart,
+  Wallet,
 } from "lucide-react";
 
 export default function CustomerDashboard() {
@@ -79,6 +79,17 @@ export default function CustomerDashboard() {
             <ShoppingBag size={22} />
             Cart
             {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+          </button>
+
+          <button
+            onClick={() => navigate("/wallet")}
+            className="badge"
+            style={{ cursor: "pointer", transition: "all 0.2s" }}
+            onMouseOver={(e) => e.currentTarget.style.background = "rgba(249, 115, 22, 0.15)"}
+            onMouseOut={(e) => e.currentTarget.style.background = "rgba(249, 115, 22, 0.08)"}
+          >
+            <Wallet size={16} />
+            Wallet
           </button>
 
           <div className="badge">
