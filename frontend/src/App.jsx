@@ -11,6 +11,11 @@ import OrderCheckout from './pages/OrderCheckout.jsx';
 import Wallet from './pages/Wallet.jsx';
 import Chat from './pages/ai_chat.jsx';
 import Feedback from './pages/feedback.jsx';
+import ManagerDashboard from "./pages/ManagerDashboard.jsx";
+import ChefDashboard from "./pages/ChefDashboard.jsx";
+import DeliveryDashboard from "./pages/DeliveryDashboard";
+
+
 
 
 // OrderHistory import
@@ -75,7 +80,10 @@ export default function App() {
       <Route path="/wallet" element={<Wallet />} />
       <Route path="/chat" element={<Chat />} />
       <Route path="/feedback" element={<Feedback />} />
-      {/* Your order history route */}
+      <Route path="/manager" element={<ManagerDashboard />} />
+      <Route path="/chef" element={<ChefDashboard />} />
+      <Route path="/delivery" element={<DeliveryDashboard />} />
+      {/* order history route */}
       <Route path="/orders" element={<OrderHistoryWrapper />} />
     </Routes>
   );
