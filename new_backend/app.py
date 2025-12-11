@@ -13,6 +13,9 @@ from routes.chat import chat_bp
 from routes.chef import chef_bp
 from routes.delivery import delivery_bp
 from routes.manager import manager_bp
+from routes.wallet import wallet_bp
+
+
 
 def create_app():
     """Application factory pattern"""
@@ -36,6 +39,7 @@ def create_app():
     app.register_blueprint(chef_bp, url_prefix='/api/chef')
     app.register_blueprint(delivery_bp, url_prefix='/api/delivery')
     app.register_blueprint(manager_bp, url_prefix='/api/manager')
+    app.register_blueprint(wallet_bp, url_prefix='/api/wallet')
     
     # Health check route
     @app.route('/api/health', methods=['GET'])
@@ -71,4 +75,3 @@ if __name__ == '__main__':
         host=FLASK_CONFIG['HOST'],
         port=FLASK_CONFIG['PORT']
     )
-    
