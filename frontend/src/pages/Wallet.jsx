@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Wallet, Plus, ArrowLeft, DollarSign, TrendingUp, Clock } from "lucide-react";
-import client from "../api/client";
 
 export default function WalletPage() {
   const navigate = useNavigate();
@@ -25,8 +24,7 @@ export default function WalletPage() {
     setCustomer(JSON.parse(stored));
   }, [navigate]);
 
-  // 🔥 FIXED — REAL BACKEND CALL
-  const handleAddFunds = async (e) => {
+  const handleAddFunds = (e) => {
     e.preventDefault();
     const depositAmount = parseFloat(amount);
 
@@ -37,25 +35,14 @@ export default function WalletPage() {
 
     setLoading(true);
 
-    try {
-      // 🔥 backend API call
-      const res = await client.post("/wallet/deposit", {
-        customer_id: customer.customer_id,
-        amount: depositAmount,
-      });
-
-      // Backend returns updated balance
-      const updatedBalance = res.data.balance;
-
+    setTimeout(() => {
       const updatedCustomer = {
         ...customer,
-        balance: updatedBalance, // 🔥 sync with backend
+        balance: (customer.balance || 0) + depositAmount,
       };
-
       setCustomer(updatedCustomer);
       localStorage.setItem("customer", JSON.stringify(updatedCustomer));
 
-      // Add to transaction list
       setTransactions((prev) => [
         {
           id: Date.now(),
@@ -69,14 +56,13 @@ export default function WalletPage() {
 
       alert(`Successfully added $${depositAmount.toFixed(2)}!`);
       setAmount("");
+      setCardName("");
+      setCardNumber("");
+      setExpiry("");
+      setCvv("");
       setShowAddFunds(false);
-
-    } catch (err) {
-      console.error("Deposit error:", err);
-      alert("Failed to deposit funds. Please try again.");
-    }
-
-    setLoading(false);
+      setLoading(false);
+    }, 500);
   };
 
   if (!customer) {
@@ -92,14 +78,18 @@ export default function WalletPage() {
     .reduce((s, t) => s + t.amount, 0);
 
   const totalSpent = Math.abs(
-    transactions.filter((t) => t.type === "order").reduce((s, t) => s + t.amount, 0)
+    transactions
+      .filter((t) => t.type === "order")
+      .reduce((s, t) => s + t.amount, 0)
   );
 
   return (
     <div className="page">
       <div className="container" style={{ maxWidth: "900px" }}>
-
-        <button className="btn btn-secondary wallet-back-btn" onClick={() => navigate(-1)}>
+        <button
+          className="btn btn-secondary wallet-back-btn"
+          onClick={() => navigate(-1)}
+        >
           <ArrowLeft size={18} /> Back
         </button>
 
@@ -111,12 +101,9 @@ export default function WalletPage() {
             </div>
           </div>
           <p className="wallet-balance-label">WALLET BALANCE</p>
-
-          {/* 🔥 uses backend-synced balance */}
           <h1 className="wallet-balance-amount">
             ${(customer.balance || 0).toFixed(2)}
           </h1>
-
           <button
             className="btn btn-lg"
             style={{ background: "white", color: "#f97316" }}
@@ -131,7 +118,10 @@ export default function WalletPage() {
           <div className="card card-sm mb-3">
             <div className="flex-between mb-3">
               <h3 className="title-md">Add Funds</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowAddFunds(false)}>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setShowAddFunds(false)}
+              >
                 Cancel
               </button>
             </div>
@@ -146,8 +136,12 @@ export default function WalletPage() {
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   min="5"
+                  step="0.01"
                   required
                 />
+                <p className="text-small text-muted mt-1">
+                  Minimum: $5.00
+                </p>
               </div>
 
               <div className="flex gap-md mb-2">
@@ -183,6 +177,7 @@ export default function WalletPage() {
                   placeholder="1234 5678 9012 3456"
                   value={cardNumber}
                   onChange={(e) => setCardNumber(e.target.value)}
+                  maxLength={19}
                   required
                 />
               </div>
@@ -196,6 +191,7 @@ export default function WalletPage() {
                     placeholder="MM/YY"
                     value={expiry}
                     onChange={(e) => setExpiry(e.target.value)}
+                    maxLength={5}
                     required
                   />
                 </div>
@@ -207,12 +203,17 @@ export default function WalletPage() {
                     placeholder="123"
                     value={cvv}
                     onChange={(e) => setCvv(e.target.value)}
+                    maxLength={3}
                     required
                   />
                 </div>
               </div>
 
-              <button type="submit" className="btn btn-primary w-full" disabled={loading}>
+              <button
+                type="submit"
+                className="btn btn-primary w-full"
+                disabled={loading}
+              >
                 {loading ? "Processing..." : `Add $${amount || "0.00"}`}
               </button>
             </form>
@@ -222,28 +223,33 @@ export default function WalletPage() {
         {/* Stats */}
         <div className="grid grid-3 mb-3">
           <div className="card card-compact text-center">
-            <DollarSign size={24} />
+            <DollarSign size={24} className="wallet-stat-icon-deposits" />
             <p className="text-small text-muted mb-1">Total Deposits</p>
-            <p className="wallet-stat-amount">${totalDeposits.toFixed(2)}</p>
+            <p className="wallet-stat-amount">
+              ${totalDeposits.toFixed(2)}
+            </p>
           </div>
 
           <div className="card card-compact text-center">
-            <TrendingUp size={24} />
+            <TrendingUp size={24} className="wallet-stat-icon-spent" />
             <p className="text-small text-muted mb-1">Total Spent</p>
-            <p className="wallet-stat-amount">${totalSpent.toFixed(2)}</p>
+            <p className="wallet-stat-amount wallet-stat-amount-spent">
+              ${totalSpent.toFixed(2)}
+            </p>
           </div>
 
           <div className="card card-compact text-center">
-            <Clock size={24} />
+            <Clock size={24} className="wallet-stat-icon-tx" />
             <p className="text-small text-muted mb-1">Transactions</p>
-            <p className="wallet-stat-amount">{transactions.length}</p>
+            <p className="wallet-stat-amount" style={{ color: "#059669" }}>
+              {transactions.length}
+            </p>
           </div>
         </div>
 
         {/* Transaction History */}
         <div className="card card-sm">
           <h3 className="title-md">Transaction History</h3>
-
           {transactions.length === 0 ? (
             <div className="text-center wallet-empty">
               <p className="text-muted">No transactions yet</p>
@@ -253,7 +259,12 @@ export default function WalletPage() {
               {transactions.map((t) => (
                 <div key={t.id} className="wallet-tx-row flex-between">
                   <div className="flex gap-md">
-                    <div className={"wallet-tx-icon-circle " + (t.type === "deposit" ? "deposit" : "order")}>
+                    <div
+                      className={
+                        "wallet-tx-icon-circle " +
+                        (t.type === "deposit" ? "deposit" : "order")
+                      }
+                    >
                       {t.type === "deposit" ? (
                         <Plus size={20} style={{ color: "#059669" }} />
                       ) : (
@@ -262,21 +273,26 @@ export default function WalletPage() {
                     </div>
                     <div>
                       <p className="wallet-tx-title">{t.description}</p>
-                      <p className="text-small text-muted wallet-tx-date">{t.date}</p>
+                      <p className="text-small text-muted wallet-tx-date">
+                        {t.date}
+                      </p>
                     </div>
                   </div>
-
-                  <div className={"wallet-tx-amount " + (t.type === "deposit" ? "deposit" : "order")}>
-                    {t.type === "deposit" ? "+" : "-"}${Math.abs(t.amount).toFixed(2)}
+                  <div
+                    className={
+                      "wallet-tx-amount " +
+                      (t.type === "deposit" ? "deposit" : "order")
+                    }
+                  >
+                    {t.type === "deposit" ? "+" : ""}$
+                    {Math.abs(t.amount).toFixed(2)}
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
 }
-
