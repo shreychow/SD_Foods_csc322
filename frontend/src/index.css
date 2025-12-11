@@ -819,3 +819,278 @@ select {
 .wallet-empty {
   padding: 40px 20px;
 }
+
+/* ========== Chat Page Layout ========== */
+
+.page-chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-top: 100px;
+  padding-bottom: 20px;
+  max-width: 900px;
+}
+
+.chat-add-knowledge {
+  padding-top: 80px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* ========== Chat Rows & Avatars ========== */
+
+.chat-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.chat-row-user {
+  justify-content: flex-end;
+}
+
+.chat-row-assistant {
+  justify-content: flex-start;
+}
+
+.chat-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-avatar-bot {
+  background: linear-gradient(135deg, #f97316, #fb923c);
+  color: white;
+}
+
+.chat-avatar-user {
+  background: #e7e5e4;
+  color: #78716c;
+}
+
+.chat-bubble-wrapper {
+  max-width: 70%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ========== Bubbles & Text ========== */
+
+.chat-bubble {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chat-bubble-user {
+  background: linear-gradient(135deg, #f97316, #fb923c);
+  color: white;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+.chat-bubble-assistant {
+  background: white;
+  color: #292524;
+}
+
+.chat-text {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* Source badge */
+
+.chat-source {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-source-icon {
+  color: #78716c;
+}
+
+.chat-source-label {
+  font-size: 0.75rem;
+  color: #78716c;
+}
+
+/* Rating */
+
+.chat-rating {
+  margin-top: 15px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding-top: 12px;
+}
+
+.chat-rating-label {
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+  color: #78716c;
+}
+
+.chat-rating-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chat-rating-done {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #22c55e;
+}
+
+/* Timestamp */
+
+.chat-timestamp {
+  font-size: 0.7rem;
+  color: #a8a29e;
+  margin-top: 4px;
+}
+
+/* ========== Typing Indicator ========== */
+
+.chat-typing {
+  display: flex;
+  gap: 8px;
+}
+
+.typing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f97316;
+  animation: typing 1.4s infinite;
+}
+
+@keyframes typing {
+  0%, 60%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-8px);
+  }
+}
+
+/* ========== Voice Banner & Error ========== */
+
+.chat-voice-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
+  margin-bottom: 12px;
+}
+
+.listening-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: pulse 1.5s infinite;
+}
+
+.chat-voice-banner-text {
+  flex: 1;
+}
+
+.chat-voice-title {
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 4px;
+}
+
+.chat-voice-interim {
+  color: #78716c;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.chat-stop-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+}
+
+.chat-voice-error {
+  border-radius: 12px;
+}
+
+/* ========== Input Bar ========== */
+
+.chat-input-bar {
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.chat-input-inner {
+  align-items: flex-end;
+}
+
+.chat-voice-btn {
+  min-width: auto;
+}
+
+.chat-voice-btn-active {
+  background: #ef4444;
+  color: white;
+  border: none;
+}
+
+.chat-input {
+  flex: 1;
+  resize: none;
+  min-height: 44px;
+  max-height: 120px;
+}
+
+.chat-voice-tip {
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: #78716c;
+  text-align: center;
+}
+
+/* Voice label in header */
+
+.chat-voice-label {
+  font-size: 0.75rem;
+  color: #78716c;
+  margin-left: 8px;
+}
+
+/* Voice pulse */
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+}

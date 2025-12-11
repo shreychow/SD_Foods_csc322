@@ -332,3 +332,26 @@ SELECT COUNT(*) as total_menu_items FROM menu_items;
 SELECT COUNT(*) as total_categories FROM category;
 SELECT COUNT(*) as total_tables FROM restaurant_tables;
 SELECT COUNT(*) as total_knowledge FROM knowledge_base;
+
+-- Add delivery_bids table for bidding system
+-- Run this in your MySQL database
+
+CREATE TABLE IF NOT EXISTS delivery_bids (
+    bid_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    driver_id INT NOT NULL,
+    bid_amount DECIMAL(10,2) NOT NULL,
+    bid_status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    justification TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    FOREIGN KEY (driver_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_order (order_id),
+    INDEX idx_driver (driver_id),
+    INDEX idx_status (bid_status)
+);
+
+-- Add index to orders.delivered_by for faster queries
+CREATE INDEX idx_delivered_by ON orders(delivered_by);
+
+SELECT 'Delivery bidding table created successfully!' as message;

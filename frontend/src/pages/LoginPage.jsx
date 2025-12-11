@@ -1,47 +1,59 @@
+// frontend/src/pages/Login.jsx - COMPLETE FIXED VERSION
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { UtensilsCrossed, LogIn, ArrowLeft } from "lucide-react";
+import { LogIn, User, Lock } from "lucide-react";
 import client from "../api/client";
 
-export default function LoginPage() {
+export default function Login() {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setError("");
-
-    if (!username.trim() || !password.trim()) {
-      setError("Please enter both username and password.");
+    
+    if (!username || !password) {
+      alert("Please enter both username and password");
       return;
     }
 
-    setLoading(true);
-
     try {
-      const res = await client.post("/auth/login", {
-        username: username.trim(),
-        password,
+      setLoading(true);
+      console.log("🔑 Attempting login:", { username });
+
+      const response = await client.post("/auth/login", {
+        username: username,
+        password: password,
       });
 
-      // Save logged-in user
-      localStorage.setItem("customer", JSON.stringify(res.data));
+      const user = response.data;
+      console.log("✅ Login successful:", user);
+      console.log("👤 User role:", user.role);
 
-      // Determine role
-      const role = res.data.role || res.data.user_type;
+      // Save to localStorage
+      localStorage.setItem("customer", JSON.stringify(user));
 
-      navigate(
-        role === "manager" ? "/manager" :
-        role === "chef" ? "/chef" :
-        role === "delivery" ? "/delivery" :
-        "/customer"
-      );
-
-    } catch (err) {
-      setError(err.response?.data?.error || "Login failed. Please check your credentials.");
+      // ⭐ CRITICAL: Navigate based on role
+      if (user.role === "chef") {
+        console.log("🍳 Redirecting to /chef");
+        navigate("/chef");
+      } else if (user.role === "driver" || user.role === "delivery") {
+        console.log("🚚 Redirecting to /delivery");
+        navigate("/delivery");
+      } else if (user.role === "manager") {
+        console.log("👔 Redirecting to /manager");
+        navigate("/manager");
+      } else if (user.role === "customer") {
+        console.log("🛒 Redirecting to /customer");
+        navigate("/customer");
+      } else {
+        console.warn("⚠️ Unknown role, redirecting to home");
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("❌ Login failed:", error);
+      alert(error.response?.data?.error || "Login failed. Please check your credentials.");
     } finally {
       setLoading(false);
     }
@@ -49,111 +61,62 @@ export default function LoginPage() {
 
   return (
     <div className="page-center">
-
-      {/* Back Button */}
-      <button 
-        onClick={() => navigate("/")} 
-        className="btn btn-ghost btn-sm"
-        style={{ position: "absolute", top: "20px", left: "20px" }}
-      >
-        <ArrowLeft size={16} /> Back to Home
-      </button>
-
-      <div className="container-sm">
-
-        {/* Brand Header */}
-        <div style={{ textAlign: "center", marginBottom: "50px" }}>
-          <div className="brand-logo">
-            <UtensilsCrossed size={40} />
-          </div>
-          <h1 className="title-xl">SD FOODS</h1>
-          <p className="tagline">Your favorite food, delivered fast</p>
+      <div className="card" style={{ maxWidth: "400px", width: "100%" }}>
+        <div style={{ textAlign: "center", marginBottom: "30px" }}>
+          <LogIn size={48} style={{ color: "#f97316", margin: "0 auto 15px" }} />
+          <h2 className="title-lg">Welcome Back</h2>
+          <p className="text-muted">Login to your account</p>
         </div>
 
-        {/* Login Card */}
-        <div className="card">
-          <h2 className="title-lg">Welcome Back</h2>
-          <p className="subtitle">Login to your account to continue</p>
-
-          {/* Tabs */}
-          <div className="tabs">
-            <button type="button" className="tab active">Login</button>
-            <button type="button" className="tab" onClick={() => navigate("/register")}>
-              Register
-            </button>
+        <form onSubmit={handleLogin}>
+          <div className="mb-3">
+            <label className="form-label">
+              <User size={16} /> Username
+            </label>
+            <input
+              type="text"
+              className="input"
+              placeholder="Enter your username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              disabled={loading}
+            />
           </div>
 
-          {/* Error Alert */}
-          {error && <div className="alert alert-error">{error}</div>}
+          <div className="mb-3">
+            <label className="form-label">
+              <Lock size={16} /> Password
+            </label>
+            <input
+              type="password"
+              className="input"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+            />
+          </div>
 
-          {/* Login Form */}
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label className="form-label">Username</label>
-              <input
-                type="text"
-                className="input"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                disabled={loading}
-                required
-              />
-            </div>
+          <button
+            type="submit"
+            className="btn btn-primary w-full"
+            disabled={loading}
+          >
+            {loading ? "Logging in..." : "Login"}
+          </button>
+        </form>
 
-            <div className="form-group">
-              <label className="form-label">Password</label>
-              <input
-                type="password"
-                className="input"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
-                required
-              />
-            </div>
-
-            <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-              {loading ? "Logging in..." : (
-                <>
-                  <LogIn size={18} />
-                  Login
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Register Link */}
-          <p className="text-small text-center text-muted" style={{ marginTop: "25px" }}>
+        <div style={{ marginTop: "20px", textAlign: "center" }}>
+          <p className="text-small text-muted">
             Don't have an account?{" "}
-            <button
-              type="button"
-              onClick={() => navigate("/register")}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#f97316",
-                cursor: "pointer",
-                fontSize: "0.85rem",
-                fontWeight: "500",
-                textDecoration: "underline"
-              }}
+            <a
+              href="/register"
+              style={{ color: "#f97316", textDecoration: "none" }}
             >
-              Create one now
-            </button>
+              Register here
+            </a>
           </p>
         </div>
-
-        {/* Footer */}
-        <p className="text-center text-muted" style={{ 
-          marginTop: "30px", 
-          fontSize: "0.75rem", 
-          letterSpacing: "2px" 
-        }}>
-          © 2024 SD FOODS
-        </p>
-
       </div>
     </div>
   );
