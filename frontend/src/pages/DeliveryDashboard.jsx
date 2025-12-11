@@ -1,4 +1,4 @@
-// frontend/src/pages/DeliveryDashboard.jsx - FIXED WITH ERROR HANDLING
+// frontend/src/pages/DeliveryDashboard.jsx - WITHOUT TOP 4 STATS BOXES
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -9,9 +9,6 @@ import {
   MapPin,
   Clock,
   AlertTriangle,
-  DollarSign,
-  ThumbsUp,
-  ThumbsDown,
   XCircle,
   TrendingUp,
   Award,
@@ -27,6 +24,7 @@ export default function DeliveryDashboard() {
   const [assignedOrders, setAssignedOrders] = useState([]);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [warningDismissed, setWarningDismissed] = useState(false);
   const [bidAmounts, setBidAmounts] = useState({});
 
@@ -37,26 +35,52 @@ export default function DeliveryDashboard() {
       return;
     }
 
-    const user = JSON.parse(stored);
-    console.log("👤 Logged in user:", user);
+    try {
+      const user = JSON.parse(stored);
+      console.log("👤 Logged in user:", user);
 
-    // Check for driver or delivery role
-    if (user.role !== "driver" && user.role !== "delivery") {
-      console.error("❌ Invalid role:", user.role);
-      alert("Access denied. Delivery role required.");
+      // CRITICAL: Check role and redirect if wrong
+      if (user.role === "customer") {
+        console.log("User is customer, redirecting to /customer");
+        navigate("/customer");
+        return;
+      }
+
+      if (user.role !== "driver" && user.role !== "delivery") {
+        console.error("Invalid role:", user.role);
+        alert("Access denied. Delivery role required.");
+        navigate("/login");
+        return;
+      }
+
+      setDelivery(user);
+      const driverId = user.user_id || user.id;
+      console.log("🚚 Driver ID:", driverId);
+      loadData(driverId);
+    } catch (err) {
+      console.error("Error parsing user data:", err);
       navigate("/login");
-      return;
     }
-
-    setDelivery(user);
-    const driverId = user.user_id || user.id;
-    console.log("🚚 Driver ID:", driverId);
-    loadData(driverId);
   }, [navigate]);
+
+  // AUTO-REFRESH: Reload profile every 5 seconds
+  useEffect(() => {
+    if (!delivery) return;
+
+    const driverId = delivery.user_id || delivery.id;
+    const interval = setInterval(() => {
+      console.log("🔄 Auto-refreshing profile...");
+      loadProfile(driverId);
+    }, 5000); // Refresh every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [delivery]);
 
   const loadData = async (driverId) => {
     try {
       setLoading(true);
+      setError(null);
+
       await Promise.all([
         loadAvailableOrders(),
         loadAssignedOrders(driverId),
@@ -64,6 +88,7 @@ export default function DeliveryDashboard() {
       ]);
     } catch (error) {
       console.error("Failed to load data:", error);
+      setError("Failed to load dashboard data");
     } finally {
       setLoading(false);
     }
@@ -73,10 +98,33 @@ export default function DeliveryDashboard() {
     try {
       console.log("📦 Loading available orders...");
       const res = await client.get("/delivery/orders/available");
-      console.log("✅ Available orders:", res.data);
-      setAvailableOrders(res.data || []);
+      console.log("Available orders response:", res.data);
+
+      const orders = Array.isArray(res.data) ? res.data : [];
+
+      const cleanOrders = orders.map((order) => ({
+        ...order,
+        order_id: order.order_id || 0,
+        customer_name: order.customer_name || "Unknown",
+        delivered_to: order.delivered_to || "No address",
+        total_price: parseFloat(order.total_price) || 0,
+        delivery_status: order.delivery_status || "Unknown",
+        bids: Array.isArray(order.bids)
+          ? order.bids.map((bid) => ({
+              ...bid,
+              bid_id: bid.bid_id || 0,
+              driver_id: bid.driver_id || 0,
+              driver_name: bid.driver_name || "Unknown Driver",
+              bid_amount: parseFloat(bid.bid_amount) || 0,
+              bid_status: bid.bid_status || "pending",
+            }))
+          : [],
+      }));
+
+      console.log("Cleaned available orders:", cleanOrders);
+      setAvailableOrders(cleanOrders);
     } catch (error) {
-      console.error("❌ Failed to load available orders:", error);
+      console.error("Failed to load available orders:", error);
       setAvailableOrders([]);
     }
   };
@@ -84,11 +132,27 @@ export default function DeliveryDashboard() {
   const loadAssignedOrders = async (driverId) => {
     try {
       console.log("📦 Loading assigned orders for driver:", driverId);
-      const res = await client.get(`/delivery/orders/assigned?driver_id=${driverId}`);
-      console.log("✅ Assigned orders:", res.data);
-      setAssignedOrders(res.data || []);
+      const res = await client.get(
+        `/delivery/orders/assigned?driver_id=${driverId}`
+      );
+      console.log("Assigned orders response:", res.data);
+
+      const orders = Array.isArray(res.data) ? res.data : [];
+
+      const cleanOrders = orders.map((order) => ({
+        ...order,
+        order_id: order.order_id || 0,
+        customer_name: order.customer_name || "Unknown",
+        delivered_to: order.delivered_to || "No address",
+        total_price: parseFloat(order.total_price) || 0,
+        delivery_status: order.delivery_status || "Unknown",
+        phone: order.phone || "No phone",
+      }));
+
+      console.log("Cleaned assigned orders:", cleanOrders);
+      setAssignedOrders(cleanOrders);
     } catch (error) {
-      console.error("❌ Failed to load assigned orders:", error);
+      console.error("Failed to load assigned orders:", error);
       setAssignedOrders([]);
     }
   };
@@ -97,10 +161,11 @@ export default function DeliveryDashboard() {
     try {
       console.log("👤 Loading profile for driver:", driverId);
       const res = await client.get(`/delivery/profile/${driverId}`);
-      console.log("✅ Profile loaded:", res.data);
+      console.log("Profile loaded:", res.data);
       setProfile(res.data);
     } catch (error) {
-      console.error("❌ Failed to load driver profile:", error);
+      console.error("Failed to load driver profile:", error);
+
       // Set default profile to avoid errors
       setProfile({
         name: delivery?.name || "Driver",
@@ -130,51 +195,48 @@ export default function DeliveryDashboard() {
         bid_amount: parseFloat(bidAmount),
       });
 
-      console.log("✅ Bid placed successfully!");
+      console.log("Bid placed successfully!");
       alert("Bid placed successfully! Wait for manager approval.");
-      
-      // Clear the bid input
+
       setBidAmounts({ ...bidAmounts, [orderId]: "" });
-      
-      // Reload orders to show updated bid
       await loadAvailableOrders();
-      
     } catch (error) {
-      console.error("❌ Failed to place bid:", error);
-      console.error("Error response:", error.response?.data);
-      alert(error.response?.data?.error || "Failed to place bid. Please try again.");
+      console.error("Failed to place bid:", error);
+      alert(
+        error.response?.data?.error || "Failed to place bid. Please try again."
+      );
     }
   };
 
   const handlePickup = async (orderId) => {
     try {
       const driverId = delivery.user_id || delivery.id;
-      console.log("📦 Picking up order:", { orderId, driverId });
+      console.log("Picking up order:", { orderId, driverId });
 
       await client.post(`/delivery/orders/${orderId}/pickup`, {
         driver_id: driverId,
       });
 
-      console.log("✅ Order picked up!");
+      console.log("Order picked up!");
       alert("Order picked up!");
       await loadData(driverId);
     } catch (error) {
-      console.error("❌ Failed to pick up order:", error);
+      console.error("Failed to pick up order:", error);
       alert(error.response?.data?.error || "Failed to pick up order");
     }
   };
 
   const handleDeliver = async (orderId) => {
     try {
-      console.log("✅ Delivering order:", orderId);
+      console.log("Delivering order:", orderId);
       await client.post(`/delivery/orders/${orderId}/deliver`);
-      
-      console.log("✅ Order delivered!");
+
+      console.log("Order delivered!");
       alert("Order delivered!");
       const driverId = delivery.user_id || delivery.id;
       await loadData(driverId);
     } catch (error) {
-      console.error("❌ Failed to deliver order:", error);
+      console.error("Failed to deliver order:", error);
       alert("Failed to deliver order");
     }
   };
@@ -184,18 +246,48 @@ export default function DeliveryDashboard() {
     navigate("/login");
   };
 
-  if (!delivery) {
+  if (loading) {
     return (
       <div className="page-center">
-        <p>Loading...</p>
+        <div style={{ textAlign: "center" }}>
+          <Truck
+            size={48}
+            style={{ color: "#3b82f6", marginBottom: "20px" }}
+          />
+          <p>Loading dashboard...</p>
+        </div>
       </div>
     );
   }
 
-  if (loading) {
+  if (error) {
     return (
       <div className="page-center">
-        <p>Loading dashboard...</p>
+        <div className="card" style={{ maxWidth: "500px", textAlign: "center" }}>
+          <AlertTriangle
+            size={48}
+            style={{ color: "#ef4444", margin: "0 auto 20px" }}
+          />
+          <h3 className="title-md mb-2">Error Loading Dashboard</h3>
+          <p className="text-muted mb-3">{error}</p>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              const driverId = delivery?.user_id || delivery?.id;
+              if (driverId) loadData(driverId);
+            }}
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!delivery) {
+    return (
+      <div className="page-center">
+        <p>Loading user data...</p>
       </div>
     );
   }
@@ -265,44 +357,6 @@ export default function DeliveryDashboard() {
           </div>
         )}
 
-        {/* Profile Stats */}
-        {profile && (
-          <div className="grid grid-4 mb-3">
-            <div className="card card-compact text-center">
-              <DollarSign
-                size={32}
-                style={{ color: "#22c55e", margin: "0 auto 10px" }}
-              />
-              <h3 className="title-lg">${profile.salary.toFixed(2)}</h3>
-              <p className="text-small text-muted">Salary</p>
-            </div>
-            <div className="card card-compact text-center">
-              <Package
-                size={32}
-                style={{ color: "#3b82f6", margin: "0 auto 10px" }}
-              />
-              <h3 className="title-lg">{profile.total_deliveries}</h3>
-              <p className="text-small text-muted">Total Deliveries</p>
-            </div>
-            <div className="card card-compact text-center">
-              <ThumbsUp
-                size={32}
-                style={{ color: "#22c55e", margin: "0 auto 10px" }}
-              />
-              <h3 className="title-lg">{profile.compliments}</h3>
-              <p className="text-small text-muted">Compliments</p>
-            </div>
-            <div className="card card-compact text-center">
-              <ThumbsDown
-                size={32}
-                style={{ color: "#ef4444", margin: "0 auto 10px" }}
-              />
-              <h3 className="title-lg">{profile.complaints}</h3>
-              <p className="text-small text-muted">Complaints</p>
-            </div>
-          </div>
-        )}
-
         {/* Tabs */}
         <div className="tabs mb-3">
           <button
@@ -323,12 +377,20 @@ export default function DeliveryDashboard() {
         {activeTab === "available" && (
           <div className="card card-sm">
             <h3 className="title-md mb-3">
-              <Award size={20} /> Available for Bidding ({availableOrders.length})
+              <Award size={20} /> Available for Bidding (
+              {availableOrders.length})
             </h3>
             {availableOrders.length === 0 ? (
-              <p className="text-muted text-center" style={{ padding: "40px" }}>
-                No orders available for bidding
-              </p>
+              <div style={{ textAlign: "center", padding: "60px 20px" }}>
+                <Package
+                  size={48}
+                  style={{ color: "#d1d5db", margin: "0 auto 20px" }}
+                />
+                <p className="text-muted">No orders available for bidding</p>
+                <p className="text-small text-muted">
+                  Check back soon for new orders!
+                </p>
+              </div>
             ) : (
               <div
                 style={{
@@ -338,10 +400,10 @@ export default function DeliveryDashboard() {
                 }}
               >
                 {availableOrders.map((order) => {
-                  const myBid =
-                    order.bids?.find(
-                      (b) => b.driver_id === (delivery.user_id || delivery.id)
-                    ) || null;
+                  const driverId = delivery.user_id || delivery.id;
+                  const myBid = (order.bids || []).find(
+                    (b) => b.driver_id === driverId
+                  );
                   const lowestBid =
                     order.bids && order.bids.length > 0
                       ? Math.min(...order.bids.map((b) => b.bid_amount))
@@ -388,7 +450,10 @@ export default function DeliveryDashboard() {
                             marginBottom: "10px",
                           }}
                         >
-                          <p className="text-small" style={{ margin: "0 0 5px 0" }}>
+                          <p
+                            className="text-small"
+                            style={{ margin: "0 0 5px 0" }}
+                          >
                             <strong>{order.bids.length} Bid(s):</strong>
                           </p>
                           {order.bids.slice(0, 3).map((bid) => (
@@ -399,20 +464,27 @@ export default function DeliveryDashboard() {
                             >
                               <span className="text-small">
                                 {bid.driver_name}
-                                {bid.driver_id === (delivery.user_id || delivery.id) &&
-                                  " (You)"}
+                                {bid.driver_id === driverId && " (You)"}
                               </span>
                               <span
                                 className="text-small"
                                 style={{
                                   fontWeight:
-                                    bid.bid_amount === lowestBid ? "bold" : "normal",
+                                    lowestBid &&
+                                    bid.bid_amount === lowestBid
+                                      ? "bold"
+                                      : "normal",
                                   color:
-                                    bid.bid_amount === lowestBid ? "#22c55e" : "inherit",
+                                    lowestBid &&
+                                    bid.bid_amount === lowestBid
+                                      ? "#22c55e"
+                                      : "inherit",
                                 }}
                               >
                                 ${bid.bid_amount.toFixed(2)}
-                                {bid.bid_amount === lowestBid && " 🏆"}
+                                {lowestBid &&
+                                  bid.bid_amount === lowestBid &&
+                                  " 🏆"}
                               </span>
                             </div>
                           ))}
@@ -467,11 +539,17 @@ export default function DeliveryDashboard() {
           <>
             {/* Ready for Pickup */}
             <div className="card card-sm mb-3">
-              <h3 className="title-md mb-3">Ready for Pickup ({ready.length})</h3>
+              <h3 className="title-md mb-3">
+                Ready for Pickup ({ready.length})
+              </h3>
               {ready.length === 0 ? (
-                <p className="text-muted text-center" style={{ padding: "40px" }}>
-                  No orders ready for pickup
-                </p>
+                <div style={{ textAlign: "center", padding: "40px 20px" }}>
+                  <Package
+                    size={48}
+                    style={{ color: "#d1d5db", margin: "0 auto 20px" }}
+                  />
+                  <p className="text-muted">No orders ready for pickup</p>
+                </div>
               ) : (
                 <div className="grid grid-2">
                   {ready.map((order) => (
@@ -525,9 +603,13 @@ export default function DeliveryDashboard() {
                 Out for Delivery ({delivering.length})
               </h3>
               {delivering.length === 0 ? (
-                <p className="text-muted text-center" style={{ padding: "40px" }}>
-                  No active deliveries
-                </p>
+                <div style={{ textAlign: "center", padding: "40px 20px" }}>
+                  <Truck
+                    size={48}
+                    style={{ color: "#d1d5db", margin: "0 auto 20px" }}
+                  />
+                  <p className="text-muted">No active deliveries</p>
+                </div>
               ) : (
                 <div className="grid grid-2">
                   {delivering.map((order) => (

@@ -18,6 +18,7 @@ DROP TABLE IF EXISTS category;
 DROP TABLE IF EXISTS reservations;
 DROP TABLE IF EXISTS restaurant_tables;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS delivery_bids
 
 /* USER TABLE */
 CREATE TABLE users(
@@ -355,3 +356,96 @@ CREATE TABLE IF NOT EXISTS delivery_bids (
 CREATE INDEX idx_delivered_by ON orders(delivered_by);
 
 SELECT 'Delivery bidding table created successfully!' as message;
+
+-- Delivery Bids Table
+CREATE TABLE IF NOT EXISTS delivery_bids (
+    bid_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    driver_id INT NOT NULL,
+    bid_amount DECIMAL(10, 2) NOT NULL,
+    bid_status ENUM('pending', 'accepted', 'rejected') DEFAULT 'pending',
+    bid_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    FOREIGN KEY (driver_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    UNIQUE KEY unique_bid (order_id, driver_id)
+);
+
+-- Delivery Assignments Table (for tracking)
+CREATE TABLE IF NOT EXISTS delivery_assignments (
+    assignment_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    driver_id INT NOT NULL,
+    manager_id INT,
+    bid_amount DECIMAL(10, 2),
+    justification TEXT,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    picked_up_at TIMESTAMP NULL,
+    delivered_at TIMESTAMP NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    FOREIGN KEY (driver_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (manager_id) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+-- Add delivered_at column to orders if not exists
+ALTER TABLE orders 
+ADD COLUMN IF NOT EXISTS delivered_at TIMESTAMP NULL;
+
+-- Add bid_time column if not exists to delivery_bids
+ALTER TABLE delivery_bids 
+ADD COLUMN IF NOT EXISTS bid_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+USE restaurant_database;
+
+-- Allow delivered_by to be NULL
+ALTER TABLE orders 
+MODIFY COLUMN delivered_by INT NULL;
+
+-- Also make sure prepared_by can be NULL
+ALTER TABLE orders 
+MODIFY COLUMN prepared_by INT NULL;
+
+-- Change role from 'delivery' to 'driver'
+UPDATE users 
+SET role = 'driver' 
+WHERE user_id IN (10, 11);
+
+-- Verify the change
+SELECT user_id, name, username, role FROM users WHERE user_id IN (10, 11);
+UPDATE users SET role = 'driver' WHERE user_id IN (10, 11);
+
+
+-- Fix ALL roles at once
+UPDATE users SET role = 'chef' WHERE username IN ('Headchef', 'Headchef2');
+UPDATE users SET role = 'driver' WHERE username IN ('deliverydriver', 'deliverydriver2');
+UPDATE users SET role = 'manager' WHERE username = 'manager';
+
+-- Verify the fix
+SELECT user_id, username, role 
+FROM users 
+WHERE username IN ('Headchef', 'Headchef2', 'deliverydriver', 'deliverydriver2', 'manager');
+
+
+USE restaurant_database;
+
+-- Create VIP requests table
+CREATE TABLE IF NOT EXISTS vip_requests (
+    request_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    request_status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    request_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reviewed_date TIMESTAMP NULL,
+    FOREIGN KEY (customer_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_status (request_status),
+    INDEX idx_customer (customer_id)
+);
+
+
+INSERT INTO vip_requests (customer_id, request_status)
+SELECT user_id, 'pending'
+FROM users
+WHERE role = 'customer' AND vip_status = 0
+LIMIT 2;
+
+SELECT * FROM vip_requests;
+
+SELECT user_id, name, vip_status FROM users WHERE vip_status = 1;
