@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Star, Package, Clock, CheckCircle2, XCircle, X, ArrowLeft } from "lucide-react";
 import client from "../api/client";
@@ -17,65 +17,78 @@ export default function OrderHistory() {
     fetchOrders();
   }, []);
 
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      const customer = JSON.parse(localStorage.getItem("customer"));
-      
-      if (!customer) {
-        navigate("/login");
-        return;
-      }
+const fetchOrders = async () => {
+  try {
+    setLoading(true);
+    const customer = JSON.parse(localStorage.getItem("customer"));
 
-      const response = await client.get(`/orders/history?customer_id=${customer.customer_id || customer.id}`);
-      
-      console.log("✅ Fetched orders:", response.data);
-      
-      // Map backend orders to frontend format
-      const mappedOrders = response.data.map(order => ({
-        id: order.order_id,
-        date: order.created_at,
-        status: mapStatus(order.delivery_status),
-        total: parseFloat(order.total_price),
-        items: order.items || [],
-        rating: 0, // TODO: fetch from ratings table if you have one
-        deliveryRating: 0
-      }));
+    console.log("1️⃣ Customer from localStorage:", customer);
 
-      setOrders(mappedOrders);
-    } catch (error) {
-      console.error("❌ Failed to fetch orders:", error);
-      setOrders([]);
-    } finally {
-      setLoading(false);
+    if (!customer) {
+      navigate("/login");
+      return;
     }
-  };
+
+    const customerId = customer.user_id || customer.customer_id || customer.id;
+    console.log("2️⃣ Using customerId:", customerId);
+
+    const url = `/orders/history?customer_id=${customerId}`;
+    console.log("3️⃣ Calling URL:", url);
+
+    const response = await client.get(url);
+    console.log("4️⃣ Response data:", response.data);
+
+    if (!response.data || response.data.length === 0) {
+      console.log("5️⃣ No orders returned from API");
+      setOrders([]);
+      return;
+    }
+
+    const mappedOrders = response.data.map((order) => ({
+      id: order.order_id,
+      date: order.created_at,
+      status: mapStatus(order.delivery_status),
+      total: parseFloat(order.total_price),
+      items: order.items || [],
+      rating: 0,
+      deliveryRating: 0,
+    }));
+
+    console.log("6️⃣ Mapped orders:", mappedOrders);
+    setOrders(mappedOrders);
+  } catch (error) {
+    console.error("❌ Error:", error);
+    console.error("❌ Error response:", error.response?.data);
+    setOrders([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const mapStatus = (backendStatus) => {
-    // Map backend status to frontend status
     const statusMap = {
-      'Pending': 'confirmed',
-      'Preparing': 'preparing',
-      'Ready': 'preparing',
-      'Out for Delivery': 'preparing',
-      'Delivered': 'delivered',
-      'Cancelled': 'cancelled'
+      Pending: "confirmed",
+      Preparing: "preparing",
+      Ready: "preparing",
+      "Out for Delivery": "preparing",
+      Delivered: "delivered",
+      Cancelled: "cancelled",
     };
-    return statusMap[backendStatus] || 'confirmed';
+    return statusMap[backendStatus] || "confirmed";
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
       case "confirmed":
-        return <Clock className="size-4" />;
+        return <Clock size={16} />;
       case "preparing":
-        return <Package className="size-4" />;
+        return <Package size={16} />;
       case "delivered":
-        return <CheckCircle2 className="size-4" />;
+        return <CheckCircle2 size={16} />;
       case "cancelled":
-        return <XCircle className="size-4" />;
+        return <XCircle size={16} />;
       default:
-        return <Clock className="size-4" />;
+        return <Clock size={16} />;
     }
   };
 
@@ -99,18 +112,15 @@ export default function OrderHistory() {
       try {
         await client.post(`/orders/${selectedOrder.id}/rating`, {
           food_rating: foodRating,
-          delivery_rating: deliveryRating
+          delivery_rating: deliveryRating,
         });
-        
+
         alert("Thank you for your rating!");
-        
-        // Update local state
-        setOrders(orders.map(order => 
-          order.id === selectedOrder.id 
-            ? { ...order, rating: foodRating, deliveryRating }
-            : order
+
+        setOrders(orders.map((order) =>
+          order.id === selectedOrder.id ? { ...order, rating: foodRating, deliveryRating } : order
         ));
-        
+
         closeDialog();
       } catch (error) {
         console.error("Failed to submit rating:", error);
@@ -134,7 +144,7 @@ export default function OrderHistory() {
   };
 
   const StarRating = ({ rating, setRating, hoveredStar, setHoveredStar }) => (
-    <div style={{ display: "flex", gap: "8px" }}>
+    <div className="flex gap-sm">
       {[1, 2, 3, 4, 5].map((star) => (
         <button
           key={star}
@@ -142,15 +152,7 @@ export default function OrderHistory() {
           onClick={() => setRating(star)}
           onMouseEnter={() => setHoveredStar(star)}
           onMouseLeave={() => setHoveredStar(0)}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
-            transition: "transform 0.2s",
-          }}
-          onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.1)"}
-          onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
         >
           <Star
             size={32}
@@ -176,27 +178,18 @@ export default function OrderHistory() {
   if (orders.length === 0) {
     return (
       <div className="page">
-        <div className="container" style={{ marginBottom: "40px" }}>
-          <button
-            onClick={() => navigate("/customer")}
-            className="btn btn-secondary"
-          >
-            <ArrowLeft size={18} />
-            Back
+        <div className="container mb-4">
+          <button onClick={() => navigate("/customer")} className="btn btn-secondary">
+            <ArrowLeft size={18} /> Back
           </button>
         </div>
 
         <div className="container">
           <div className="card" style={{ padding: "80px 40px", textAlign: "center" }}>
             <Package size={80} style={{ color: "#d4d4d8", margin: "0 auto 20px" }} />
-            <h3 className="title-md" style={{ margin: "0 0 10px 0" }}>No orders yet</h3>
-            <p className="text-muted" style={{ margin: "0 0 30px 0" }}>
-              Your order history will appear here once you place an order
-            </p>
-            <button
-              onClick={() => navigate("/menu")}
-              className="btn btn-primary"
-            >
+            <h3 className="title-md">No orders yet</h3>
+            <p className="text-muted mb-3">Your order history will appear here once you place an order</p>
+            <button onClick={() => navigate("/menu")} className="btn btn-primary">
               Browse Menu
             </button>
           </div>
@@ -207,56 +200,38 @@ export default function OrderHistory() {
 
   return (
     <div className="page">
-      {/* Header */}
-      <div className="container" style={{ marginBottom: "40px" }}>
-        <button
-          onClick={() => navigate("/customer")}
-          className="btn btn-secondary"
-          style={{ marginBottom: "30px" }}
-        >
-          <ArrowLeft size={18} />
-          Back
+      <div className="container mb-4">
+        <button onClick={() => navigate("/customer")} className="btn btn-secondary mb-3">
+          <ArrowLeft size={18} /> Back
         </button>
 
-        <h2 className="title-lg" style={{ margin: "0 0 10px 0" }}>Order History</h2>
+        <h2 className="title-lg">Order History</h2>
         <p className="text-muted">View and rate your past orders</p>
       </div>
 
-      {/* Orders List */}
-      <div className="container" style={{ marginBottom: "60px" }}>
+      <div className="container">
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           {orders.map((order) => {
             const statusColor = getStatusColor(order.status);
             return (
-              <div key={order.id} className="card" style={{ padding: "30px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "20px" }}>
+              <div key={order.id} className="card">
+                <div className="flex-between mb-3">
                   <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-                      <h3 className="title-md" style={{ margin: 0 }}>
-                        Order #{order.id}
-                      </h3>
-                      <span
-                        style={{
-                          padding: "6px 14px",
-                          borderRadius: "20px",
-                          fontSize: "0.85rem",
-                          fontWeight: "500",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "6px",
-                          background: statusColor.bg,
-                          color: statusColor.text,
-                          border: `1px solid ${statusColor.border}`,
-                        }}
-                      >
+                    <div className="flex gap-md mb-2">
+                      <h3 className="title-md" style={{ margin: 0 }}>Order #{order.id}</h3>
+                      <span className="badge" style={{
+                        background: statusColor.bg,
+                        color: statusColor.text,
+                        border: `1px solid ${statusColor.border}`,
+                      }}>
                         {getStatusIcon(order.status)}
                         <span style={{ textTransform: "capitalize" }}>{order.status}</span>
                       </span>
                     </div>
-                    <p className="text-muted" style={{ margin: 0, fontSize: "0.9rem" }}>
-                      {new Date(order.date).toLocaleString('en-US', {
-                        dateStyle: 'medium',
-                        timeStyle: 'short'
+                    <p className="text-muted text-small">
+                      {new Date(order.date).toLocaleString("en-US", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
                       })}
                     </p>
                   </div>
@@ -265,26 +240,21 @@ export default function OrderHistory() {
                       ${order.total.toFixed(2)}
                     </p>
                     {order.rating > 0 && (
-                      <div style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "flex-end" }}>
+                      <div className="flex gap-sm" style={{ justifyContent: "flex-end" }}>
                         <Star size={16} style={{ fill: "#facc15", color: "#facc15" }} />
-                        <span className="text-muted" style={{ fontSize: "0.9rem" }}>
-                          {order.rating}/5
-                        </span>
+                        <span className="text-muted text-small">{order.rating}/5</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Order Items */}
                 {order.items && order.items.length > 0 && (
-                  <div style={{ marginBottom: "20px" }}>
+                  <div className="mb-3">
                     {order.items.map((item, idx) => (
                       <div
                         key={idx}
+                        className="flex-between"
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "15px",
                           padding: "12px",
                           background: "rgba(249, 115, 22, 0.03)",
                           borderRadius: "8px",
@@ -292,26 +262,24 @@ export default function OrderHistory() {
                           border: "1px solid rgba(249, 115, 22, 0.08)",
                         }}
                       >
-                        {item.image_url && (
-                          <img
-                            src={item.image_url}
-                            alt={item.name}
-                            style={{
-                              width: "50px",
-                              height: "50px",
-                              objectFit: "cover",
-                              borderRadius: "6px",
-                            }}
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                            }}
-                          />
-                        )}
-                        <div style={{ flex: 1 }}>
-                          <p style={{ margin: "0 0 3px 0", fontWeight: "500" }}>{item.name}</p>
-                          <p className="text-muted" style={{ margin: 0, fontSize: "0.85rem" }}>
-                            Qty: {item.quantity}
-                          </p>
+                        <div className="flex gap-md" style={{ flex: 1 }}>
+                          {item.image_url && (
+                            <img
+                              src={item.image_url}
+                              alt={item.name}
+                              style={{
+                                width: "50px",
+                                height: "50px",
+                                objectFit: "cover",
+                                borderRadius: "6px",
+                              }}
+                              onError={(e) => { e.target.style.display = "none"; }}
+                            />
+                          )}
+                          <div>
+                            <p style={{ margin: "0 0 3px 0", fontWeight: "500" }}>{item.name}</p>
+                            <p className="text-muted text-small">Qty: {item.quantity}</p>
+                          </div>
                         </div>
                         <p style={{ margin: 0, fontWeight: "600", fontSize: "1rem" }}>
                           ${(parseFloat(item.item_price) * item.quantity).toFixed(2)}
@@ -321,12 +289,8 @@ export default function OrderHistory() {
                   </div>
                 )}
 
-                {/* Rate Button */}
                 {order.status === "delivered" && (
-                  <button
-                    className="btn btn-primary w-full"
-                    onClick={() => openRatingDialog(order)}
-                  >
+                  <button className="btn btn-primary w-full" onClick={() => openRatingDialog(order)}>
                     <Star size={18} />
                     {order.rating ? "Update Rating" : "Rate Order"}
                   </button>
@@ -337,7 +301,6 @@ export default function OrderHistory() {
         </div>
       </div>
 
-      {/* Rating Dialog Modal */}
       {selectedOrder && (
         <div
           style={{
@@ -354,12 +317,7 @@ export default function OrderHistory() {
         >
           <div
             className="card"
-            style={{
-              maxWidth: "500px",
-              width: "100%",
-              padding: "40px",
-              position: "relative",
-            }}
+            style={{ maxWidth: "500px", width: "100%", padding: "40px", position: "relative" }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -377,17 +335,13 @@ export default function OrderHistory() {
               <X size={24} />
             </button>
 
-            <h3 className="title-md" style={{ margin: "0 0 10px 0" }}>
-              Rate Your Experience
-            </h3>
-            <p className="text-muted" style={{ margin: "0 0 30px 0", fontSize: "0.9rem" }}>
+            <h3 className="title-md">Rate Your Experience</h3>
+            <p className="text-muted text-small mb-3">
               Help us improve by rating your food and delivery
             </p>
 
-            <div style={{ marginBottom: "30px" }}>
-              <label style={{ display: "block", marginBottom: "12px", fontWeight: "500", fontSize: "0.95rem" }}>
-                Food Quality
-              </label>
+            <div className="mb-3">
+              <label className="form-label">Food Quality</label>
               <StarRating
                 rating={foodRating}
                 setRating={setFoodRating}
@@ -396,10 +350,8 @@ export default function OrderHistory() {
               />
             </div>
 
-            <div style={{ marginBottom: "30px" }}>
-              <label style={{ display: "block", marginBottom: "12px", fontWeight: "500", fontSize: "0.95rem" }}>
-                Delivery Experience
-              </label>
+            <div className="mb-3">
+              <label className="form-label">Delivery Experience</label>
               <StarRating
                 rating={deliveryRating}
                 setRating={setDeliveryRating}
@@ -410,7 +362,6 @@ export default function OrderHistory() {
 
             <button
               className="btn btn-primary w-full"
-              style={{ opacity: foodRating === 0 && deliveryRating === 0 ? 0.5 : 1 }}
               onClick={handleRateOrder}
               disabled={foodRating === 0 && deliveryRating === 0}
             >

@@ -1,191 +1,720 @@
+// import { useState, useEffect, useRef } from "react";
+// import { useNavigate } from "react-router-dom";
+// import { Send, Bot, User, ArrowLeft, Loader, ThumbsUp, ThumbsDown } from "lucide-react";
+// import client from "../api/client";
+
+// export default function ChatPage() {
+//   const navigate = useNavigate();
+//   const [customer, setCustomer] = useState(null);
+//   const [messages, setMessages] = useState([]);
+//   const [input, setInput] = useState("");
+//   const [loading, setLoading] = useState(false);
+//   const messagesEndRef = useRef(null);
+
+//   useEffect(() => {
+//     const stored = localStorage.getItem("customer");
+//     if (stored) {
+//       setCustomer(JSON.parse(stored));
+//     }
+//     // Don't redirect - allow visitors to use chat
+    
+//     setMessages([{
+//       role: "assistant",
+//       content: "Hello! I'm your AI assistant. Ask me anything about our restaurant, menu, delivery, or place an order!",
+//       timestamp: new Date(),
+//     }]);
+//   }, []);
+
+//   useEffect(() => {
+//     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+//   }, [messages]);
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     if (!input.trim() || loading) return;
+
+//     setMessages((prev) => [...prev, { role: "user", content: input.trim(), timestamp: new Date() }]);
+//     setInput("");
+//     setLoading(true);
+
+//     try {
+//       const response = await client.post("/chat/", {
+//         message: input.trim(),
+//         customer_id: customer?.customer_id || customer?.id || null, // null for visitors
+//       });
+
+//       setMessages((prev) => [...prev, {
+//         role: "assistant",
+//         content: response.data.response || response.data.message,
+//         fromKnowledgeBase: response.data.from_knowledge_base,
+//         messageId: response.data.message_id,
+//         timestamp: new Date(),
+//       }]);
+//     } catch (error) {
+//       setMessages((prev) => [...prev, {
+//         role: "assistant",
+//         content: "Sorry, I'm having trouble connecting. Please try again or contact support.",
+//         timestamp: new Date(),
+//         isError: true,
+//       }]);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleRating = async (messageId, rating) => {
+//     try {
+//       await client.post("/chat/rate", {
+//         message_id: messageId,
+//         rating: rating,
+//         customer_id: customer?.customer_id || customer?.id || null,
+//       });
+//       setMessages((prev) => prev.map((msg) => msg.messageId === messageId ? { ...msg, rated: rating } : msg));
+//     } catch (error) {
+//       console.error("Rating error:", error);
+//     }
+//   };
+
+//   return (
+//     <div className="page" style={{ padding: 0, display: "flex", flexDirection: "column" }}>
+//       {/* Header */}
+//       <div className="navbar">
+//         <button onClick={() => navigate(customer ? "/customer" : "/")} className="btn btn-ghost btn-sm">
+//           <ArrowLeft size={16} /> Back
+//         </button>
+//         <div className="text-center">
+//           <h1 className="title-md" style={{ margin: 0 }}>AI ASSISTANT</h1>
+//           <p className="text-muted text-small">Ask about menu, orders, or restaurant info</p>
+//         </div>
+//         <div style={{ width: "80px" }} />
+//       </div>
+
+//       {/* Visitor Notice */}
+//       {!customer && (
+//         <div style={{ padding: "0 20px", paddingTop: "100px" }}>
+//           <div className="alert alert-info">
+//             <p style={{ margin: 0 }}>
+//               Chatting as a visitor. <strong>Login or register</strong> to place orders!{" "}
+//               <button
+//                 onClick={() => navigate("/register")}
+//                 style={{
+//                   background: "none",
+//                   border: "none",
+//                   color: "#f97316",
+//                   textDecoration: "underline",
+//                   cursor: "pointer",
+//                   fontWeight: "600"
+//                 }}
+//               >
+//                 Register now
+//               </button>
+//             </p>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Messages */}
+//       <div style={{ flex: 1, overflowY: "auto", padding: customer ? "150px 20px 20px" : "20px 20px 20px", display: "flex", justifyContent: "center" }}>
+//         <div className="container-md" style={{ width: "100%" }}>
+//           {messages.map((msg, idx) => (
+//             <div key={idx} className="mb-3" style={{ display: "flex", gap: "15px", flexDirection: msg.role === "user" ? "row-reverse" : "row" }}>
+//               <div className="brand-logo-sm" style={{ background: msg.role === "user" ? "linear-gradient(135deg, #a8a29e, #78716c)" : undefined }}>
+//                 {msg.role === "user" ? <User size={20} /> : <Bot size={20} />}
+//               </div>
+              
+//               <div style={{ maxWidth: "70%" }}>
+//                 <div className="card-compact" style={{
+//                   background: msg.role === "user" ? "rgba(249, 115, 22, 0.08)" : msg.isError ? "rgba(239, 68, 68, 0.08)" : undefined,
+//                   borderRadius: msg.role === "user" ? "20px 20px 4px 20px" : "20px 20px 20px 4px"
+//                 }}>
+//                   <p style={{ margin: 0, lineHeight: "1.6" }}>{msg.content}</p>
+//                   {msg.fromKnowledgeBase && <span className="badge mt-2" style={{ fontSize: "0.7rem" }}>FROM KB</span>}
+//                 </div>
+
+//                 {msg.fromKnowledgeBase && !msg.rated && (
+//                   <div className="flex gap-sm mt-1">
+//                     <span className="text-small text-muted">Rate:</span>
+//                     <button onClick={() => handleRating(msg.messageId, 1)} className="btn-sm" style={{ border: "1px solid #22c55e", background: "none", color: "#22c55e", padding: "4px 10px", fontSize: "0.7rem" }}>
+//                       <ThumbsUp size={12} /> Good
+//                     </button>
+//                     <button onClick={() => handleRating(msg.messageId, 0)} className="btn-sm" style={{ border: "1px solid #ef4444", background: "none", color: "#ef4444", padding: "4px 10px", fontSize: "0.7rem" }}>
+//                       <ThumbsDown size={12} /> Bad
+//                     </button>
+//                   </div>
+//                 )}
+
+//                 <span className="text-small" style={{ color: "#d4d4d8" }}>
+//                   {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+//                 </span>
+//               </div>
+//             </div>
+//           ))}
+
+//           {loading && (
+//             <div className="flex gap-md mb-3">
+//               <div className="brand-logo-sm"><Bot size={20} /></div>
+//               <div className="card-compact flex gap-sm">
+//                 <Loader size={16} style={{ color: "#f97316", animation: "spin 1s linear infinite" }} />
+//                 <span className="text-muted">Thinking...</span>
+//               </div>
+//             </div>
+//           )}
+//           <div ref={messagesEndRef} />
+//         </div>
+//       </div>
+
+//       {/* Input */}
+//       <div className="navbar" style={{ position: "relative", display: "flex", justifyContent: "center" }}>
+//         <div className="container-md flex gap-md">
+//           <input
+//             type="text"
+//             value={input}
+//             onChange={(e) => setInput(e.target.value)}
+//             onKeyPress={(e) => e.key === "Enter" && handleSubmit(e)}
+//             placeholder="Ask about menu, orders, delivery..."
+//             disabled={loading}
+//             className="input"
+//             style={{ flex: 1, borderRadius: "50px" }}
+//           />
+//           <button onClick={handleSubmit} disabled={loading || !input.trim()} className="btn btn-primary">
+//             <Send size={18} /> Send
+//           </button>
+//         </div>
+//       </div>
+
+//       <style>{`
+//         @keyframes spin {
+//           from { transform: rotate(0deg); }
+//           to { transform: rotate(360deg); }
+//         }
+//       `}</style>
+//     </div>
+//   );
+// }
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, Bot, User, ArrowLeft, Loader, ThumbsUp, ThumbsDown } from "lucide-react";
+import { 
+  MessageSquare, 
+  Send, 
+  ArrowLeft, 
+  Bot, 
+  User, 
+  Star, 
+  ThumbsUp, 
+  ThumbsDown,
+  Sparkles,
+  BookOpen,
+  Plus
+} from "lucide-react";
 import client from "../api/client";
 
 export default function ChatPage() {
   const navigate = useNavigate();
+  const messagesEndRef = useRef(null);
+  
   const [customer, setCustomer] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
+  const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef(null);
+  const [sessionId] = useState(Date.now().toString());
+  const [showAddKnowledge, setShowAddKnowledge] = useState(false);
+  
+  // Add knowledge form
+  const [newQuestion, setNewQuestion] = useState("");
+  const [newAnswer, setNewAnswer] = useState("");
+  const [newCategory, setNewCategory] = useState("General");
 
   useEffect(() => {
     const stored = localStorage.getItem("customer");
     if (stored) {
       setCustomer(JSON.parse(stored));
     }
-    // Don't redirect - allow visitors to use chat
     
+    // Add welcome message
     setMessages([{
+      id: 0,
       role: "assistant",
-      content: "Hello! I'm your AI assistant. Ask me anything about our restaurant, menu, delivery, or place an order!",
-      timestamp: new Date(),
+      content: "Hello! I'm your AI assistant. I can help you with menu information, hours, delivery details, and more. What would you like to know?",
+      source: "system",
+      timestamp: new Date()
     }]);
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollToBottom();
   }, [messages]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!input.trim() || loading) return;
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
-    setMessages((prev) => [...prev, { role: "user", content: input.trim(), timestamp: new Date() }]);
-    setInput("");
+  const handleSend = async () => {
+    const trimmed = inputMessage.trim();
+    if (!trimmed) return;
+
+    const now = new Date();
+
+    // 1) Add user message using functional update so we don't depend on stale `messages`
+    setMessages(prev => {
+      const newId = prev.length ? prev[prev.length - 1].id + 1 : 1;
+      const userMessage = {
+        id: newId,
+        role: "user",
+        content: trimmed,
+        timestamp: now
+      };
+      return [...prev, userMessage];
+    });
+
+    setInputMessage("");
     setLoading(true);
 
     try {
-      const response = await client.post("/chat/", {
-        message: input.trim(),
-        customer_id: customer?.customer_id || customer?.id || null, // null for visitors
+      const response = await client.post("/chat/ask", {
+        message: trimmed,
+        user_id: customer?.user_id || customer?.id,
+        session_id: sessionId
       });
 
-      setMessages((prev) => [...prev, {
-        role: "assistant",
-        content: response.data.response || response.data.message,
-        fromKnowledgeBase: response.data.from_knowledge_base,
-        messageId: response.data.message_id,
-        timestamp: new Date(),
-      }]);
+      console.log("Chat /chat/ask response:", response.data);
+      const data = response.data || {};
+
+      // 2) Add assistant message, again based on latest state
+      setMessages(prev => {
+        const newId = prev.length ? prev[prev.length - 1].id + 1 : 1;
+        const assistantMessage = {
+          id: newId,
+          role: "assistant",
+          content: data.response || "No response from server.",
+          source: data.source,
+          chat_id: data.chat_id,
+          kb_id: data.kb_id,
+          needs_rating: data.needs_rating,
+          category: data.category,
+          timestamp: new Date()
+        };
+        return [...prev, assistantMessage];
+      });
     } catch (error) {
-      setMessages((prev) => [...prev, {
-        role: "assistant",
-        content: "Sorry, I'm having trouble connecting. Please try again or contact support.",
-        timestamp: new Date(),
-        isError: true,
-      }]);
+      console.error("Chat error:", error);
+
+      const backendError =
+        error.response?.data?.response ||
+        error.response?.data?.error ||
+        error.message ||
+        "Sorry, I encountered an error. Please try again.";
+
+      setMessages(prev => {
+        const newId = prev.length ? prev[prev.length - 1].id + 1 : 1;
+        const errorMessage = {
+          id: newId,
+          role: "assistant",
+          content: backendError,
+          source: "error",
+          timestamp: new Date()
+        };
+        return [...prev, errorMessage];
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRating = async (messageId, rating) => {
+  const handleRating = async (chatId, rating) => {
     try {
       await client.post("/chat/rate", {
-        message_id: messageId,
+        chat_id: chatId,
         rating: rating,
-        customer_id: customer?.customer_id || customer?.id || null,
+        user_id: customer?.user_id || customer?.id
       });
-      setMessages((prev) => prev.map((msg) => msg.messageId === messageId ? { ...msg, rated: rating } : msg));
+
+      // Update message to show it's been rated
+      setMessages(prev => prev.map(msg => 
+        msg.chat_id === chatId 
+          ? { ...msg, rated: true, user_rating: rating }
+          : msg
+      ));
+
+      if (rating === 0) {
+        alert("Thank you for flagging this response. Our manager will review it.");
+      }
     } catch (error) {
       console.error("Rating error:", error);
+      alert("Failed to submit rating. Please try again.");
+    }
+  };
+
+  const handleAddKnowledge = async (e) => {
+    e.preventDefault();
+    
+    if (!customer) {
+      alert("Please login to add knowledge!");
+      return;
+    }
+
+    try {
+      const response = await client.post("/chat/knowledge/add", {
+        question: newQuestion,
+        answer: newAnswer,
+        category: newCategory,
+        user_id: customer.user_id || customer.id
+      });
+
+      alert(response.data.message);
+      setNewQuestion("");
+      setNewAnswer("");
+      setNewCategory("General");
+      setShowAddKnowledge(false);
+    } catch (error) {
+      console.error("Add knowledge error:", error);
+      alert("Failed to add knowledge. Please try again.");
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
 
   return (
-    <div className="page" style={{ padding: 0, display: "flex", flexDirection: "column" }}>
+    <div className="page" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
       {/* Header */}
       <div className="navbar">
-        <button onClick={() => navigate(customer ? "/customer" : "/")} className="btn btn-ghost btn-sm">
-          <ArrowLeft size={16} /> Back
-        </button>
-        <div className="text-center">
-          <h1 className="title-md" style={{ margin: 0 }}>AI ASSISTANT</h1>
-          <p className="text-muted text-small">Ask about menu, orders, or restaurant info</p>
+        <div className="flex gap-md">
+          <button 
+            className="btn btn-ghost btn-sm" 
+            onClick={() => navigate(customer ? "/customer" : "/")}
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div className="flex gap-md">
+            <Bot size={24} style={{ color: "#f97316" }} />
+            <span className="brand-name">AI Assistant</span>
+          </div>
         </div>
-        <div style={{ width: "80px" }} />
+        <button 
+          className="btn btn-primary btn-sm"
+          onClick={() => setShowAddKnowledge(!showAddKnowledge)}
+        >
+          <Plus size={16} /> Add Knowledge
+        </button>
       </div>
 
-      {/* Visitor Notice */}
-      {!customer && (
-        <div style={{ padding: "0 20px", paddingTop: "100px" }}>
-          <div className="alert alert-info">
-            <p style={{ margin: 0 }}>
-              Chatting as a visitor. <strong>Login or register</strong> to place orders!{" "}
-              <button
-                onClick={() => navigate("/register")}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "#f97316",
-                  textDecoration: "underline",
-                  cursor: "pointer",
-                  fontWeight: "600"
-                }}
-              >
-                Register now
-              </button>
+      {/* Add Knowledge Form */}
+      {showAddKnowledge && (
+        <div className="container" style={{ paddingTop: "80px" }}>
+          <div className="card card-sm">
+            <h3 className="title-md mb-2">Contribute Knowledge</h3>
+            <p className="text-small text-muted mb-3">
+              Help improve our AI by adding questions and answers!
+              {customer?.role === 'customer' && " (Subject to manager approval)"}
             </p>
+            <form onSubmit={handleAddKnowledge}>
+              <div className="form-group">
+                <label className="form-label">Question</label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="What question should this answer?"
+                  value={newQuestion}
+                  onChange={(e) => setNewQuestion(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Answer</label>
+                <textarea
+                  className="textarea"
+                  rows="4"
+                  placeholder="Provide a helpful answer..."
+                  value={newAnswer}
+                  onChange={(e) => setNewAnswer(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Category</label>
+                <select 
+                  className="input"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                >
+                  <option value="General">General</option>
+                  <option value="Menu">Menu</option>
+                  <option value="Hours">Hours</option>
+                  <option value="Delivery">Delivery</option>
+                  <option value="Payment">Payment</option>
+                  <option value="VIP">VIP Program</option>
+                  <option value="Policy">Policy</option>
+                  <option value="Orders">Orders</option>
+                </select>
+              </div>
+              <div className="flex gap-sm">
+                <button type="submit" className="btn btn-primary">
+                  Submit Knowledge
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary"
+                  onClick={() => setShowAddKnowledge(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* Messages */}
-      <div style={{ flex: 1, overflowY: "auto", padding: customer ? "150px 20px 20px" : "20px 20px 20px", display: "flex", justifyContent: "center" }}>
-        <div className="container-md" style={{ width: "100%" }}>
-          {messages.map((msg, idx) => (
-            <div key={idx} className="mb-3" style={{ display: "flex", gap: "15px", flexDirection: msg.role === "user" ? "row-reverse" : "row" }}>
-              <div className="brand-logo-sm" style={{ background: msg.role === "user" ? "linear-gradient(135deg, #a8a29e, #78716c)" : undefined }}>
-                {msg.role === "user" ? <User size={20} /> : <Bot size={20} />}
-              </div>
-              
+      {/* Chat Container */}
+      <div 
+        className="container" 
+        style={{ 
+          flex: 1, 
+          display: "flex", 
+          flexDirection: "column",
+          paddingTop: showAddKnowledge ? "20px" : "100px",
+          paddingBottom: "20px",
+          maxWidth: "900px"
+        }}
+      >
+        {/* Messages */}
+        <div 
+          style={{ 
+            flex: 1, 
+            overflowY: "auto", 
+            marginBottom: "20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "15px"
+          }}
+        >
+          {messages.map((message) => (
+            <div 
+              key={message.id}
+              style={{
+                display: "flex",
+                gap: "12px",
+                alignItems: "flex-start",
+                justifyContent: message.role === "user" ? "flex-end" : "flex-start"
+              }}
+            >
+              {message.role === "assistant" && (
+                <div 
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #f97316, #fb923c)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0
+                  }}
+                >
+                  <Bot size={24} color="white" />
+                </div>
+              )}
+
               <div style={{ maxWidth: "70%" }}>
-                <div className="card-compact" style={{
-                  background: msg.role === "user" ? "rgba(249, 115, 22, 0.08)" : msg.isError ? "rgba(239, 68, 68, 0.08)" : undefined,
-                  borderRadius: msg.role === "user" ? "20px 20px 4px 20px" : "20px 20px 20px 4px"
-                }}>
-                  <p style={{ margin: 0, lineHeight: "1.6" }}>{msg.content}</p>
-                  {msg.fromKnowledgeBase && <span className="badge mt-2" style={{ fontSize: "0.7rem" }}>FROM KB</span>}
+                <div 
+                  className="card card-compact"
+                  style={{
+                    background: message.role === "user" 
+                      ? "linear-gradient(135deg, #f97316, #fb923c)" 
+                      : "white",
+                    color: message.role === "user" ? "white" : "#292524",
+                    boxShadow: message.role === "user" 
+                      ? "0 4px 12px rgba(249, 115, 22, 0.3)"
+                      : "0 2px 8px rgba(0, 0, 0, 0.1)"
+                  }}
+                >
+                  <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>
+                    {message.content}
+                  </p>
+
+                  {/* Source badge */}
+                  {message.source && message.source !== "system" && message.source !== "error" && (
+                    <div style={{ marginTop: "10px", display: "flex", gap: "8px", alignItems: "center" }}>
+                      {message.source === "knowledge_base" ? (
+                        <>
+                          <BookOpen size={14} style={{ color: message.role === "user" ? "rgba(255,255,255,0.8)" : "#78716c" }} />
+                          <span style={{ 
+                            fontSize: "0.75rem", 
+                            color: message.role === "user" ? "rgba(255,255,255,0.8)" : "#78716c"
+                          }}>
+                            From Knowledge Base
+                            {message.category && ` • ${message.category}`}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={14} style={{ color: message.role === "user" ? "rgba(255,255,255,0.8)" : "#78716c" }} />
+                          <span style={{ 
+                            fontSize: "0.75rem", 
+                            color: message.role === "user" ? "rgba(255,255,255,0.8)" : "#78716c"
+                          }}>
+                            AI Generated
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Rating buttons for KB answers */}
+                  {message.needs_rating && !message.rated && (
+                    <div style={{ marginTop: "15px", borderTop: "1px solid rgba(0,0,0,0.1)", paddingTop: "12px" }}>
+                      <p style={{ fontSize: "0.85rem", marginBottom: "8px", color: "#78716c" }}>
+                        Was this answer helpful?
+                      </p>
+                      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                        {[5, 4, 3, 2, 1, 0].map(rating => (
+                          <button
+                            key={rating}
+                            onClick={() => handleRating(message.chat_id, rating)}
+                            className="btn btn-secondary btn-sm"
+                            style={{ minWidth: "auto", padding: "6px 12px" }}
+                          >
+                            {rating === 0 ? (
+                              <>
+                                <ThumbsDown size={14} /> Flag
+                              </>
+                            ) : (
+                              <>
+                                <Star size={14} fill={rating >= 4 ? "#facc15" : "none"} /> {rating}
+                              </>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Show rating if already rated */}
+                  {message.rated && (
+                    <div style={{ marginTop: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <ThumbsUp size={14} style={{ color: "#22c55e" }} />
+                      <span style={{ fontSize: "0.75rem", color: "#22c55e" }}>
+                        Rated: {message.user_rating}/5
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                {msg.fromKnowledgeBase && !msg.rated && (
-                  <div className="flex gap-sm mt-1">
-                    <span className="text-small text-muted">Rate:</span>
-                    <button onClick={() => handleRating(msg.messageId, 1)} className="btn-sm" style={{ border: "1px solid #22c55e", background: "none", color: "#22c55e", padding: "4px 10px", fontSize: "0.7rem" }}>
-                      <ThumbsUp size={12} /> Good
-                    </button>
-                    <button onClick={() => handleRating(msg.messageId, 0)} className="btn-sm" style={{ border: "1px solid #ef4444", background: "none", color: "#ef4444", padding: "4px 10px", fontSize: "0.7rem" }}>
-                      <ThumbsDown size={12} /> Bad
-                    </button>
-                  </div>
-                )}
-
-                <span className="text-small" style={{ color: "#d4d4d8" }}>
-                  {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                <span style={{ 
+                  fontSize: "0.7rem", 
+                  color: "#a8a29e",
+                  marginTop: "4px",
+                  display: "block"
+                }}>
+                  {message.timestamp instanceof Date
+                    ? message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
+
+              {message.role === "user" && (
+                <div 
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "50%",
+                    background: "#e7e5e4",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0
+                  }}
+                >
+                  <User size={24} color="#78716c" />
+                </div>
+              )}
             </div>
           ))}
 
           {loading && (
-            <div className="flex gap-md mb-3">
-              <div className="brand-logo-sm"><Bot size={20} /></div>
-              <div className="card-compact flex gap-sm">
-                <Loader size={16} style={{ color: "#f97316", animation: "spin 1s linear infinite" }} />
-                <span className="text-muted">Thinking...</span>
+            <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+              <div 
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #f97316, #fb923c)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+              >
+                <Bot size={24} color="white" />
+              </div>
+              <div className="card card-compact" style={{ maxWidth: "70%" }}>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <div className="typing-dot"></div>
+                  <div className="typing-dot" style={{ animationDelay: "0.2s" }}></div>
+                  <div className="typing-dot" style={{ animationDelay: "0.4s" }}></div>
+                </div>
               </div>
             </div>
           )}
+
           <div ref={messagesEndRef} />
         </div>
-      </div>
 
-      {/* Input */}
-      <div className="navbar" style={{ position: "relative", display: "flex", justifyContent: "center" }}>
-        <div className="container-md flex gap-md">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSubmit(e)}
-            placeholder="Ask about menu, orders, delivery..."
-            disabled={loading}
-            className="input"
-            style={{ flex: 1, borderRadius: "50px" }}
-          />
-          <button onClick={handleSubmit} disabled={loading || !input.trim()} className="btn btn-primary">
-            <Send size={18} /> Send
-          </button>
+        {/* Input */}
+        <div 
+          className="card card-compact"
+          style={{ 
+            padding: "15px",
+            boxShadow: "0 -4px 12px rgba(0, 0, 0, 0.1)"
+          }}
+        >
+          <div style={{ display: "flex", gap: "12px", alignItems: "flex-end" }}>
+            <textarea
+              className="input"
+              placeholder="Ask me anything about the restaurant..."
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              rows="1"
+              style={{
+                flex: 1,
+                resize: "none",
+                minHeight: "44px",
+                maxHeight: "120px"
+              }}
+            />
+            <button 
+              className="btn btn-primary"
+              onClick={handleSend}
+              disabled={loading || !inputMessage.trim()}
+              style={{ minWidth: "auto", padding: "12px 20px" }}
+            >
+              <Send size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
       <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        .typing-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #f97316;
+          animation: typing 1.4s infinite;
+        }
+
+        @keyframes typing {
+          0%, 60%, 100% {
+            opacity: 0.3;
+            transform: translateY(0);
+          }
+          30% {
+            opacity: 1;
+            transform: translateY(-8px);
+          }
         }
       `}</style>
     </div>
