@@ -680,3 +680,142 @@ select {
     font-size: 0.8rem;
   }
 }
+
+/* ========== Wallet Page ========== */
+
+.wallet-card {
+  background: linear-gradient(135deg, #f97316, #fb923c);
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.wallet-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.wallet-icon-circle {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wallet-balance-label {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  margin: 0 0 10px 0;
+}
+
+.wallet-balance-amount {
+  color: #ffffff;
+  font-size: 3.5rem;
+  font-weight: 300;
+  letter-spacing: 4px;
+  margin: 0 0 20px 0;
+}
+
+.wallet-add-section {
+  margin-top: 25px;
+  padding-top: 25px;
+  border-top: 1px solid rgba(249, 115, 22, 0.1);
+}
+
+/* Stats cards */
+
+.wallet-stat-amount {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.wallet-stat-amount-spent {
+  color: #dc2626;
+}
+
+.wallet-stat-icon-deposits {
+  color: #f97316;
+  margin: 0 auto 10px;
+}
+
+.wallet-stat-icon-spent {
+  color: #dc2626;
+  margin: 0 auto 10px;
+}
+
+.wallet-stat-icon-tx {
+  color: #059669;
+  margin: 0 auto 10px;
+}
+
+/* Transactions */
+
+.wallet-tx-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wallet-tx-row {
+  padding: 15px;
+  background: rgba(249, 115, 22, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(249, 115, 22, 0.1);
+}
+
+.wallet-tx-icon-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wallet-tx-icon-circle.deposit {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.wallet-tx-icon-circle.order {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.wallet-tx-amount {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.wallet-tx-amount.deposit {
+  color: #059669;
+}
+
+.wallet-tx-amount.order {
+  color: #dc2626;
+}
+
+.wallet-tx-title {
+  margin: 0 0 5px 0;
+  font-weight: 500;
+  color: #78716c;
+}
+
+.wallet-tx-date {
+  margin: 0;
+}
+
+/* Back button spacing */
+
+.wallet-back-btn {
+  margin-bottom: 24px;
+}
+
+/* Empty state */
+
+.wallet-empty {
+  padding: 40px 20px;
+}

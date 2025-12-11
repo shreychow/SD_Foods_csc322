@@ -13,24 +13,33 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
     if (!username.trim() || !password.trim()) {
       setError("Please enter both username and password.");
       return;
     }
+
     setLoading(true);
+
     try {
       const res = await client.post("/auth/login", {
         username: username.trim(),
-        password: password,
+        password,
       });
+
+      // Save logged-in user
       localStorage.setItem("customer", JSON.stringify(res.data));
+
+      // Determine role
       const role = res.data.role || res.data.user_type;
+
       navigate(
-        role === "manager" ? "/manager" : 
-        role === "chef" ? "/chef" : 
-        role === "delivery" ? "/delivery" : 
+        role === "manager" ? "/manager" :
+        role === "chef" ? "/chef" :
+        role === "delivery" ? "/delivery" :
         "/customer"
       );
+
     } catch (err) {
       setError(err.response?.data?.error || "Login failed. Please check your credentials.");
     } finally {
@@ -38,22 +47,9 @@ export default function LoginPage() {
     }
   };
 
-  const handleDemo = () => {
-    localStorage.setItem("customer", JSON.stringify({
-      customer_id: 1,
-      username: "demo_user",
-      name: "Demo User",
-      email: "demo@sdfoods.com",
-      role: "customer",
-      balance: 100,
-      vip_status: false,
-      warnings: 0
-    }));
-    navigate("/customer");
-  };
-
   return (
     <div className="page-center">
+
       {/* Back Button */}
       <button 
         onClick={() => navigate("/")} 
@@ -64,6 +60,7 @@ export default function LoginPage() {
       </button>
 
       <div className="container-sm">
+
         {/* Brand Header */}
         <div style={{ textAlign: "center", marginBottom: "50px" }}>
           <div className="brand-logo">
@@ -73,7 +70,7 @@ export default function LoginPage() {
           <p className="tagline">Your favorite food, delivered fast</p>
         </div>
 
-        {/* Auth Card */}
+        {/* Login Card */}
         <div className="card">
           <h2 className="title-lg">Welcome Back</h2>
           <p className="subtitle">Login to your account to continue</p>
@@ -127,20 +124,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo Login */}
-          <div style={{ 
-            marginTop: "25px", 
-            paddingTop: "25px", 
-            borderTop: "1px solid rgba(249, 115, 22, 0.1)" 
-          }}>
-            <p className="text-small text-center text-muted" style={{ marginBottom: "12px" }}>
-              Testing without backend?
-            </p>
-            <button type="button" className="btn btn-secondary w-full" onClick={handleDemo}>
-              Continue as Demo User
-            </button>
-          </div>
-
           {/* Register Link */}
           <p className="text-small text-center text-muted" style={{ marginTop: "25px" }}>
             Don't have an account?{" "}
@@ -170,6 +153,7 @@ export default function LoginPage() {
         }}>
           © 2024 SD FOODS
         </p>
+
       </div>
     </div>
   );

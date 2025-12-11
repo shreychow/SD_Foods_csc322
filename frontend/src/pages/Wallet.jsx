@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Wallet, Plus, ArrowLeft, CreditCard, DollarSign, TrendingUp, Clock } from "lucide-react";
+import { Wallet, Plus, ArrowLeft, DollarSign, TrendingUp, Clock } from "lucide-react";
 
 export default function WalletPage() {
   const navigate = useNavigate();
@@ -12,11 +12,7 @@ export default function WalletPage() {
   const [expiry, setExpiry] = useState("");
   const [cvv, setCvv] = useState("");
   const [loading, setLoading] = useState(false);
-  const [transactions, setTransactions] = useState([
-    { id: 1, type: "deposit", amount: 100, date: "2024-12-09", description: "Initial deposit" },
-    { id: 2, type: "order", amount: -25.5, date: "2024-12-08", description: "Order #1234" },
-    { id: 3, type: "deposit", amount: 50, date: "2024-12-07", description: "Wallet top-up" },
-  ]);
+  const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
     const stored = localStorage.getItem("customer");
@@ -31,21 +27,31 @@ export default function WalletPage() {
   const handleAddFunds = (e) => {
     e.preventDefault();
     const depositAmount = parseFloat(amount);
-    
+
     if (isNaN(depositAmount) || depositAmount < 5) {
       alert("Minimum deposit is $5.00");
       return;
     }
 
     setLoading(true);
+
     setTimeout(() => {
-      const updatedCustomer = { ...customer, balance: (customer.balance || 0) + depositAmount };
+      const updatedCustomer = {
+        ...customer,
+        balance: (customer.balance || 0) + depositAmount,
+      };
       setCustomer(updatedCustomer);
       localStorage.setItem("customer", JSON.stringify(updatedCustomer));
-      
-      setTransactions([
-        { id: Date.now(), type: "deposit", amount: depositAmount, date: new Date().toISOString().split('T')[0], description: "Wallet deposit" },
-        ...transactions
+
+      setTransactions((prev) => [
+        {
+          id: Date.now(),
+          type: "deposit",
+          amount: depositAmount,
+          date: new Date().toISOString().split("T")[0],
+          description: "Wallet deposit",
+        },
+        ...prev,
       ]);
 
       alert(`Successfully added $${depositAmount.toFixed(2)}!`);
@@ -59,30 +65,50 @@ export default function WalletPage() {
     }, 500);
   };
 
-  if (!customer) return <div className="page-center"><p>Loading...</p></div>;
+  if (!customer) {
+    return (
+      <div className="page-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
-  const totalDeposits = transactions.filter(t => t.type === "deposit").reduce((s, t) => s + t.amount, 0);
-  const totalSpent = Math.abs(transactions.filter(t => t.type === "order").reduce((s, t) => s + t.amount, 0));
+  const totalDeposits = transactions
+    .filter((t) => t.type === "deposit")
+    .reduce((s, t) => s + t.amount, 0);
+
+  const totalSpent = Math.abs(
+    transactions
+      .filter((t) => t.type === "order")
+      .reduce((s, t) => s + t.amount, 0)
+  );
 
   return (
     <div className="page">
       <div className="container" style={{ maxWidth: "900px" }}>
-        <button className="btn btn-secondary mb-3" onClick={() => navigate(-1)}>
+        <button
+          className="btn btn-secondary wallet-back-btn"
+          onClick={() => navigate(-1)}
+        >
           <ArrowLeft size={18} /> Back
         </button>
 
         {/* Balance Card */}
-        <div className="card" style={{ background: "linear-gradient(135deg, #f97316, #fb923c)", marginBottom: "30px", textAlign: "center" }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "15px" }}>
-            <div style={{ width: "70px", height: "70px", borderRadius: "50%", background: "rgba(255, 255, 255, 0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className="card wallet-card">
+          <div className="wallet-icon-wrapper">
+            <div className="wallet-icon-circle">
               <Wallet size={36} color="white" />
             </div>
           </div>
-          <p style={{ color: "rgba(255, 255, 255, 0.9)", fontSize: "0.9rem", letterSpacing: "2px", margin: "0 0 10px 0" }}>WALLET BALANCE</p>
-          <h1 style={{ color: "white", fontSize: "3.5rem", fontWeight: "300", letterSpacing: "4px", margin: "0 0 20px 0" }}>
+          <p className="wallet-balance-label">WALLET BALANCE</p>
+          <h1 className="wallet-balance-amount">
             ${(customer.balance || 0).toFixed(2)}
           </h1>
-          <button className="btn btn-lg" style={{ background: "white", color: "#f97316" }} onClick={() => setShowAddFunds(true)}>
+          <button
+            className="btn btn-lg"
+            style={{ background: "white", color: "#f97316" }}
+            onClick={() => setShowAddFunds(true)}
+          >
             <Plus size={20} /> Add Funds
           </button>
         </div>
@@ -91,20 +117,41 @@ export default function WalletPage() {
         {showAddFunds && (
           <div className="card card-sm mb-3">
             <div className="flex-between mb-3">
-              <h3 className="title-md" style={{ margin: 0 }}>Add Funds</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowAddFunds(false)}>Cancel</button>
+              <h3 className="title-md">Add Funds</h3>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setShowAddFunds(false)}
+              >
+                Cancel
+              </button>
             </div>
 
             <form onSubmit={handleAddFunds}>
               <div className="form-group">
                 <label className="form-label">Amount</label>
-                <input type="number" className="input" placeholder="50.00" value={amount} onChange={(e) => setAmount(e.target.value)} min="5" step="0.01" required />
-                <p className="text-small text-muted" style={{ marginTop: "5px" }}>Minimum: $5.00</p>
+                <input
+                  type="number"
+                  className="input"
+                  placeholder="50.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  min="5"
+                  step="0.01"
+                  required
+                />
+                <p className="text-small text-muted mt-1">
+                  Minimum: $5.00
+                </p>
               </div>
 
-              <div style={{ display: "flex", gap: "10px", marginBottom: "15px" }}>
-                {[10, 25, 50, 100].map(amt => (
-                  <button key={amt} type="button" className="btn btn-secondary btn-sm" onClick={() => setAmount(amt.toString())}>
+              <div className="flex gap-md mb-2">
+                {[10, 25, 50, 100].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => setAmount(amt.toString())}
+                  >
                     ${amt}
                   </button>
                 ))}
@@ -112,26 +159,61 @@ export default function WalletPage() {
 
               <div className="form-group">
                 <label className="form-label">Name on Card</label>
-                <input type="text" className="input" placeholder="John Doe" value={cardName} onChange={(e) => setCardName(e.target.value)} required />
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="John Doe"
+                  value={cardName}
+                  onChange={(e) => setCardName(e.target.value)}
+                  required
+                />
               </div>
 
               <div className="form-group">
                 <label className="form-label">Card Number</label>
-                <input type="text" className="input" placeholder="1234 5678 9012 3456" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} maxLength={19} required />
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="1234 5678 9012 3456"
+                  value={cardNumber}
+                  onChange={(e) => setCardNumber(e.target.value)}
+                  maxLength={19}
+                  required
+                />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "15px" }}>
+              <div className="grid grid-2">
                 <div className="form-group">
                   <label className="form-label">Expiry Date</label>
-                  <input type="text" className="input" placeholder="MM/YY" value={expiry} onChange={(e) => setExpiry(e.target.value)} maxLength={5} required />
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="MM/YY"
+                    value={expiry}
+                    onChange={(e) => setExpiry(e.target.value)}
+                    maxLength={5}
+                    required
+                  />
                 </div>
                 <div className="form-group">
                   <label className="form-label">CVV</label>
-                  <input type="text" className="input" placeholder="123" value={cvv} onChange={(e) => setCvv(e.target.value)} maxLength={3} required />
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="123"
+                    value={cvv}
+                    onChange={(e) => setCvv(e.target.value)}
+                    maxLength={3}
+                    required
+                  />
                 </div>
               </div>
 
-              <button type="submit" className="btn btn-primary w-full" disabled={loading}>
+              <button
+                type="submit"
+                className="btn btn-primary w-full"
+                disabled={loading}
+              >
                 {loading ? "Processing..." : `Add $${amount || "0.00"}`}
               </button>
             </form>
@@ -141,19 +223,27 @@ export default function WalletPage() {
         {/* Stats */}
         <div className="grid grid-3 mb-3">
           <div className="card card-compact text-center">
-            <DollarSign size={24} style={{ color: "#f97316", margin: "0 auto 10px" }} />
-            <p className="text-small text-muted" style={{ margin: "0 0 5px 0" }}>Total Deposits</p>
-            <p className="menu-price" style={{ margin: 0, fontSize: "1.3rem" }}>${totalDeposits.toFixed(2)}</p>
+            <DollarSign size={24} className="wallet-stat-icon-deposits" />
+            <p className="text-small text-muted mb-1">Total Deposits</p>
+            <p className="wallet-stat-amount">
+              ${totalDeposits.toFixed(2)}
+            </p>
           </div>
+
           <div className="card card-compact text-center">
-            <TrendingUp size={24} style={{ color: "#dc2626", margin: "0 auto 10px" }} />
-            <p className="text-small text-muted" style={{ margin: "0 0 5px 0" }}>Total Spent</p>
-            <p style={{ margin: 0, fontSize: "1.3rem", fontWeight: "600", color: "#dc2626" }}>${totalSpent.toFixed(2)}</p>
+            <TrendingUp size={24} className="wallet-stat-icon-spent" />
+            <p className="text-small text-muted mb-1">Total Spent</p>
+            <p className="wallet-stat-amount wallet-stat-amount-spent">
+              ${totalSpent.toFixed(2)}
+            </p>
           </div>
+
           <div className="card card-compact text-center">
-            <Clock size={24} style={{ color: "#059669", margin: "0 auto 10px" }} />
-            <p className="text-small text-muted" style={{ margin: "0 0 5px 0" }}>Transactions</p>
-            <p style={{ margin: 0, fontSize: "1.3rem", fontWeight: "600", color: "#059669" }}>{transactions.length}</p>
+            <Clock size={24} className="wallet-stat-icon-tx" />
+            <p className="text-small text-muted mb-1">Transactions</p>
+            <p className="wallet-stat-amount" style={{ color: "#059669" }}>
+              {transactions.length}
+            </p>
           </div>
         </div>
 
@@ -161,22 +251,41 @@ export default function WalletPage() {
         <div className="card card-sm">
           <h3 className="title-md">Transaction History</h3>
           {transactions.length === 0 ? (
-            <div className="text-center" style={{ padding: "40px 20px" }}><p className="text-muted">No transactions yet</p></div>
+            <div className="text-center wallet-empty">
+              <p className="text-muted">No transactions yet</p>
+            </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div className="wallet-tx-list">
               {transactions.map((t) => (
-                <div key={t.id} className="flex-between" style={{ padding: "15px", background: "rgba(249, 115, 22, 0.05)", borderRadius: "12px", border: "1px solid rgba(249, 115, 22, 0.1)" }}>
+                <div key={t.id} className="wallet-tx-row flex-between">
                   <div className="flex gap-md">
-                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: t.type === "deposit" ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      {t.type === "deposit" ? <Plus size={20} style={{ color: "#059669" }} /> : <DollarSign size={20} style={{ color: "#dc2626" }} />}
+                    <div
+                      className={
+                        "wallet-tx-icon-circle " +
+                        (t.type === "deposit" ? "deposit" : "order")
+                      }
+                    >
+                      {t.type === "deposit" ? (
+                        <Plus size={20} style={{ color: "#059669" }} />
+                      ) : (
+                        <DollarSign size={20} style={{ color: "#dc2626" }} />
+                      )}
                     </div>
                     <div>
-                      <p style={{ margin: "0 0 5px 0", fontWeight: "500", color: "#78716c" }}>{t.description}</p>
-                      <p className="text-small text-muted" style={{ margin: 0 }}>{t.date}</p>
+                      <p className="wallet-tx-title">{t.description}</p>
+                      <p className="text-small text-muted wallet-tx-date">
+                        {t.date}
+                      </p>
                     </div>
                   </div>
-                  <div style={{ fontSize: "1.2rem", fontWeight: "600", color: t.type === "deposit" ? "#059669" : "#dc2626" }}>
-                    {t.type === "deposit" ? "+" : ""}${Math.abs(t.amount).toFixed(2)}
+                  <div
+                    className={
+                      "wallet-tx-amount " +
+                      (t.type === "deposit" ? "deposit" : "order")
+                    }
+                  >
+                    {t.type === "deposit" ? "+" : ""}$
+                    {Math.abs(t.amount).toFixed(2)}
                   </div>
                 </div>
               ))}
@@ -187,3 +296,4 @@ export default function WalletPage() {
     </div>
   );
 }
+
