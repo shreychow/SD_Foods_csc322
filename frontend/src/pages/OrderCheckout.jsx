@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ShoppingBag, Plus, Minus, Trash2, ArrowLeft, Wallet, AlertCircle } from "lucide-react";
+import {
+  ShoppingBag,
+  Plus,
+  Minus,
+  Trash2,
+  ArrowLeft,
+  Wallet,
+  AlertCircle,
+} from "lucide-react";
 import client from "../api/client";
 
 export default function OrderCheckout() {
@@ -45,12 +53,21 @@ export default function OrderCheckout() {
     localStorage.setItem("cart", JSON.stringify(updatedCart));
   };
 
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = cart.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
   const deliveryFee = subtotal > 0 ? 3.99 : 0;
   const tax = subtotal * 0.08;
   const total = subtotal + deliveryFee + tax;
-  
-  const currentBalance = customer?.balance || 0;
+
+  // 🔹 Always read the freshest customer from localStorage
+  const storedCustomerFresh = localStorage.getItem("customer");
+  const activeCustomer = storedCustomerFresh
+    ? JSON.parse(storedCustomerFresh)
+    : customer;
+
+  const currentBalance = Number(activeCustomer?.balance ?? 0);
   const remainingBalance = currentBalance - total;
   const hasSufficientFunds = remainingBalance >= 0;
 
@@ -60,7 +77,13 @@ export default function OrderCheckout() {
       return;
     }
 
-    if (!addressLine1.trim() || !city.trim() || !stateRegion.trim() || !zip.trim() || !phoneNumber.trim()) {
+    if (
+      !addressLine1.trim() ||
+      !city.trim() ||
+      !stateRegion.trim() ||
+      !zip.trim() ||
+      !phoneNumber.trim()
+    ) {
       alert("Please fill in all delivery details.");
       return;
     }
@@ -74,11 +97,11 @@ export default function OrderCheckout() {
 
     try {
       const orderData = {
-        customer_id: customer?.customer_id || customer?.id,
-        items: cart.map(item => ({
+        customer_id: activeCustomer?.customer_id || activeCustomer?.id,
+        items: cart.map((item) => ({
           dish_id: item.id,
           quantity: item.quantity,
-          price: item.price
+          price: item.price,
         })),
         delivery_address: `${addressLine1}, ${city}, ${stateRegion} ${zip}`,
         phone: phoneNumber,
@@ -87,12 +110,15 @@ export default function OrderCheckout() {
 
       await client.post("/orders/", orderData);
       alert("Order placed successfully!");
-      
-      // Update customer balance in localStorage
-      const updatedCustomer = { ...customer, balance: remainingBalance };
+
+      // 🔹 Update balance based on activeCustomer (fresh one)
+      const updatedCustomer = {
+        ...activeCustomer,
+        balance: remainingBalance,
+      };
       setCustomer(updatedCustomer);
       localStorage.setItem("customer", JSON.stringify(updatedCustomer));
-      
+
       setCart([]);
       localStorage.removeItem("cart");
       setAddressLine1("");
@@ -104,7 +130,10 @@ export default function OrderCheckout() {
       navigate("/customer");
     } catch (error) {
       console.error("Order error:", error);
-      alert(error.response?.data?.error || "Failed to place order. Please try again.");
+      alert(
+        error.response?.data?.error ||
+          "Failed to place order. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -115,9 +144,18 @@ export default function OrderCheckout() {
     return (
       <div className="page-center">
         <div className="container-sm text-center">
-          <ShoppingBag size={80} style={{ color: "#a8a29e", margin: "0 auto 20px", display: "block" }} />
+          <ShoppingBag
+            size={80}
+            style={{
+              color: "#a8a29e",
+              margin: "0 auto 20px",
+              display: "block",
+            }}
+          />
           <h3 className="title-md">Your cart is empty</h3>
-          <p className="text-muted mb-3">Add some delicious items to get started!</p>
+          <p className="text-muted mb-3">
+            Add some delicious items to get started!
+          </p>
           <button className="btn btn-primary" onClick={() => navigate("/menu")}>
             Browse Menu
           </button>
@@ -130,7 +168,10 @@ export default function OrderCheckout() {
     <div className="page">
       <div className="container">
         {/* Back Button */}
-        <button className="btn btn-secondary mb-3" onClick={() => navigate(-1)}>
+        <button
+          className="btn btn-secondary mb-3"
+          onClick={() => navigate(-1)}
+        >
           <ArrowLeft size={18} />
           Back
         </button>
@@ -139,12 +180,23 @@ export default function OrderCheckout() {
         <div className="card card-sm mb-3">
           <div className="flex-between">
             <div>
-              <p className="text-small text-muted" style={{ margin: "0 0 5px 0" }}>Your Wallet Balance</p>
-              <h2 className="menu-price" style={{ fontSize: "2rem", margin: 0 }}>
+              <p
+                className="text-small text-muted"
+                style={{ margin: "0 0 5px 0" }}
+              >
+                Your Wallet Balance
+              </p>
+              <h2
+                className="menu-price"
+                style={{ fontSize: "2rem", margin: 0 }}
+              >
                 ${currentBalance.toFixed(2)}
               </h2>
             </div>
-            <button className="btn btn-secondary" onClick={() => navigate("/wallet")}>
+            <button
+              className="btn btn-secondary"
+              onClick={() => navigate("/wallet")}
+            >
               <Wallet size={18} />
               Add Funds
             </button>
@@ -153,17 +205,23 @@ export default function OrderCheckout() {
 
         <div className="grid grid-2" style={{ alignItems: "start" }}>
           {/* Left: Cart Items + Delivery */}
-          <div className="flex" style={{ flexDirection: "column", gap: "20px" }}>
+          <div
+            className="flex"
+            style={{ flexDirection: "column", gap: "20px" }}
+          >
             {/* Cart items */}
             <div className="card card-sm">
               <h3 className="title-md">Your Cart ({cart.length} items)</h3>
               <p className="text-muted text-small mb-3">
                 Review your order before checking out
               </p>
-              
-              <div className="flex" style={{ flexDirection: "column", gap: "12px" }}>
+
+              <div
+                className="flex"
+                style={{ flexDirection: "column", gap: "12px" }}
+              >
                 {cart.map((item) => (
-                  <div 
+                  <div
                     key={item.id}
                     style={{
                       display: "flex",
@@ -172,46 +230,70 @@ export default function OrderCheckout() {
                       padding: "12px",
                       background: "rgba(249, 115, 22, 0.05)",
                       borderRadius: "12px",
-                      border: "1px solid rgba(249, 115, 22, 0.1)"
+                      border: "1px solid rgba(249, 115, 22, 0.1)",
                     }}
                   >
                     <div style={{ flex: 1 }}>
-                      <h4 style={{ margin: "0 0 5px 0", fontSize: "1rem", color: "#78716c" }}>
+                      <h4
+                        style={{
+                          margin: "0 0 5px 0",
+                          fontSize: "1rem",
+                          color: "#78716c",
+                        }}
+                      >
                         {item.name}
                       </h4>
-                      <p className="menu-price" style={{ margin: "0 0 8px 0" }}>
+                      <p
+                        className="menu-price"
+                        style={{ margin: "0 0 8px 0" }}
+                      >
                         ${item.price.toFixed(2)}
                       </p>
                       <div className="flex gap-sm">
-                        <button className="btn-icon" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
+                        <button
+                          className="btn-icon"
+                          onClick={() =>
+                            updateQuantity(item.id, item.quantity - 1)
+                          }
+                        >
                           <Minus size={14} />
                         </button>
-                        <span style={{ 
-                          minWidth: "30px", 
-                          textAlign: "center",
-                          fontWeight: "600",
-                          color: "#78716c"
-                        }}>
+                        <span
+                          style={{
+                            minWidth: "30px",
+                            textAlign: "center",
+                            fontWeight: "600",
+                            color: "#78716c",
+                          }}
+                        >
                           {item.quantity}
                         </span>
-                        <button className="btn-icon" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
+                        <button
+                          className="btn-icon"
+                          onClick={() =>
+                            updateQuantity(item.id, item.quantity + 1)
+                          }
+                        >
                           <Plus size={14} />
                         </button>
                         <button
                           className="btn-icon"
                           onClick={() => removeFromCart(item.id)}
-                          style={{ 
+                          style={{
                             marginLeft: "10px",
                             background: "#fee2e2",
                             borderColor: "#fecaca",
-                            color: "#dc2626"
+                            color: "#dc2626",
                           }}
                         >
                           <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
-                    <div className="menu-price" style={{ minWidth: "80px", textAlign: "right" }}>
+                    <div
+                      className="menu-price"
+                      style={{ minWidth: "80px", textAlign: "right" }}
+                    >
                       ${(item.price * item.quantity).toFixed(2)}
                     </div>
                   </div>
@@ -222,7 +304,13 @@ export default function OrderCheckout() {
             {/* Delivery details */}
             <div className="card card-sm">
               <h3 className="title-md">Delivery Details</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "15px",
+                }}
+              >
                 <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                   <label className="form-label">Address Line</label>
                   <input
@@ -271,11 +359,17 @@ export default function OrderCheckout() {
           </div>
 
           {/* Right: Summary */}
-          <div className="flex" style={{ flexDirection: "column", gap: "20px" }}>
+          <div
+            className="flex"
+            style={{ flexDirection: "column", gap: "20px" }}
+          >
             {/* Order summary */}
             <div className="card card-sm">
               <h3 className="title-md">Order Summary</h3>
-              <div className="flex" style={{ flexDirection: "column", gap: "10px" }}>
+              <div
+                className="flex"
+                style={{ flexDirection: "column", gap: "10px" }}
+              >
                 <div className="flex-between">
                   <span className="text-muted">Subtotal</span>
                   <span>${subtotal.toFixed(2)}</span>
@@ -288,8 +382,21 @@ export default function OrderCheckout() {
                   <span className="text-muted">Tax (8%)</span>
                   <span>${tax.toFixed(2)}</span>
                 </div>
-                <div style={{ height: "1px", background: "rgba(249, 115, 22, 0.2)", margin: "5px 0" }} />
-                <div className="flex-between" style={{ fontWeight: "600", fontSize: "1.2rem", color: "#78716c" }}>
+                <div
+                  style={{
+                    height: "1px",
+                    background: "rgba(249, 115, 22, 0.2)",
+                    margin: "5px 0",
+                  }}
+                />
+                <div
+                  className="flex-between"
+                  style={{
+                    fontWeight: "600",
+                    fontSize: "1.2rem",
+                    color: "#78716c",
+                  }}
+                >
                   <span>Total</span>
                   <span className="menu-price">${total.toFixed(2)}</span>
                 </div>
@@ -299,29 +406,67 @@ export default function OrderCheckout() {
             {/* Balance Check */}
             <div className="card card-sm">
               <h3 className="title-md">Payment</h3>
-              
-              <div className="flex" style={{ flexDirection: "column", gap: "12px" }}>
-                <div className="flex-between" style={{ padding: "12px", background: "rgba(249, 115, 22, 0.05)", borderRadius: "12px" }}>
-                  <span className="text-muted">Current Balance</span>
-                  <span style={{ fontWeight: "600" }}>${currentBalance.toFixed(2)}</span>
-                </div>
-                <div className="flex-between" style={{ padding: "12px", background: "rgba(249, 115, 22, 0.05)", borderRadius: "12px" }}>
-                  <span className="text-muted">Order Total</span>
-                  <span style={{ fontWeight: "600" }}>${total.toFixed(2)}</span>
-                </div>
-                <div 
-                  className="flex-between" 
-                  style={{ 
-                    padding: "12px", 
-                    background: hasSufficientFunds ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)", 
+
+              <div
+                className="flex"
+                style={{ flexDirection: "column", gap: "12px" }}
+              >
+                <div
+                  className="flex-between"
+                  style={{
+                    padding: "12px",
+                    background: "rgba(249, 115, 22, 0.05)",
                     borderRadius: "12px",
-                    border: `1px solid ${hasSufficientFunds ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)"}`
                   }}
                 >
-                  <span style={{ fontWeight: "600", color: hasSufficientFunds ? "#059669" : "#dc2626" }}>
+                  <span className="text-muted">Current Balance</span>
+                  <span style={{ fontWeight: "600" }}>
+                    ${currentBalance.toFixed(2)}
+                  </span>
+                </div>
+                <div
+                  className="flex-between"
+                  style={{
+                    padding: "12px",
+                    background: "rgba(249, 115, 22, 0.05)",
+                    borderRadius: "12px",
+                  }}
+                >
+                  <span className="text-muted">Order Total</span>
+                  <span style={{ fontWeight: "600" }}>
+                    ${total.toFixed(2)}
+                  </span>
+                </div>
+                <div
+                  className="flex-between"
+                  style={{
+                    padding: "12px",
+                    background: hasSufficientFunds
+                      ? "rgba(16, 185, 129, 0.1)"
+                      : "rgba(239, 68, 68, 0.1)",
+                    borderRadius: "12px",
+                    border: `1px solid ${
+                      hasSufficientFunds
+                        ? "rgba(16, 185, 129, 0.3)"
+                        : "rgba(239, 68, 68, 0.3)"
+                    }`,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontWeight: "600",
+                      color: hasSufficientFunds ? "#059669" : "#dc2626",
+                    }}
+                  >
                     Remaining Balance
                   </span>
-                  <span style={{ fontWeight: "600", fontSize: "1.1rem", color: hasSufficientFunds ? "#059669" : "#dc2626" }}>
+                  <span
+                    style={{
+                      fontWeight: "600",
+                      fontSize: "1.1rem",
+                      color: hasSufficientFunds ? "#059669" : "#dc2626",
+                    }}
+                  >
                     ${remainingBalance.toFixed(2)}
                   </span>
                 </div>
@@ -329,14 +474,34 @@ export default function OrderCheckout() {
                 {/* Insufficient Funds Warning */}
                 {!hasSufficientFunds && (
                   <div className="alert alert-error" style={{ marginTop: "10px" }}>
-                    <div className="flex gap-sm" style={{ alignItems: "flex-start" }}>
-                      <AlertCircle size={20} style={{ flexShrink: 0, marginTop: "2px" }} />
+                    <div
+                      className="flex gap-sm"
+                      style={{ alignItems: "flex-start" }}
+                    >
+                      <AlertCircle
+                        size={20}
+                        style={{ flexShrink: 0, marginTop: "2px" }}
+                      />
                       <div>
-                        <p style={{ margin: "0 0 8px 0", fontWeight: "600" }}>Insufficient Balance</p>
-                        <p style={{ margin: "0 0 8px 0", fontSize: "0.85rem" }}>
-                          You need ${Math.abs(remainingBalance).toFixed(2)} more to place this order.
+                        <p
+                          style={{
+                            margin: "0 0 8px 0",
+                            fontWeight: "600",
+                          }}
+                        >
+                          Insufficient Balance
                         </p>
-                        <button 
+                        <p
+                          style={{
+                            margin: "0 0 8px 0",
+                            fontSize: "0.85rem",
+                          }}
+                        >
+                          You need $
+                          {Math.abs(remainingBalance).toFixed(2)} more to place
+                          this order.
+                        </p>
+                        <button
                           className="btn btn-secondary btn-sm"
                           onClick={() => navigate("/wallet")}
                           style={{ marginTop: "5px" }}
@@ -349,7 +514,7 @@ export default function OrderCheckout() {
                   </div>
                 )}
               </div>
-              
+
               <button
                 type="button"
                 className="btn btn-primary btn-lg w-full"
@@ -357,11 +522,16 @@ export default function OrderCheckout() {
                 disabled={loading || !hasSufficientFunds}
                 style={{ marginTop: "15px" }}
               >
-                {loading ? "Placing order..." : `Place Order · $${total.toFixed(2)}`}
+                {loading
+                  ? "Placing order..."
+                  : `Place Order · $${total.toFixed(2)}`}
               </button>
-              
+
               {!hasSufficientFunds && (
-                <p className="text-small text-muted text-center" style={{ marginTop: "10px" }}>
+                <p
+                  className="text-small text-muted text-center"
+                  style={{ marginTop: "10px" }}
+                >
                   Please add funds to your wallet to continue
                 </p>
               )}
@@ -372,3 +542,4 @@ export default function OrderCheckout() {
     </div>
   );
 }
+
