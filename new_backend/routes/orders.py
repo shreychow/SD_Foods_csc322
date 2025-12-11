@@ -154,6 +154,12 @@ def get_order_history():
             
             order['items'] = items
             order['total_price'] = float(order['total_price'])
+            
+            # ✅ Convert time fields to string
+            if order.get('delivery_time'):
+                order['delivery_time'] = str(order['delivery_time'])
+            if order.get('delivery_date'):
+                order['delivery_date'] = str(order['delivery_date'])
         
         cursor.close()
         conn.close()

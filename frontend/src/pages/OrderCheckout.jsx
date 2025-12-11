@@ -21,6 +21,7 @@ export default function OrderCheckout() {
   const [zip, setZip] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
+  const [balanceLoading, setBalanceLoading] = useState(true);
 
   useEffect(() => {
     const storedCustomer = localStorage.getItem("customer");
@@ -29,11 +30,37 @@ export default function OrderCheckout() {
       navigate("/login");
       return;
     }
-    setCustomer(JSON.parse(storedCustomer));
+    
+    const customerData = JSON.parse(storedCustomer);
+    setCustomer(customerData);
+
+    // Fetch fresh balance from database
+    fetchFreshBalance(customerData.customer_id || customerData.id);
 
     const storedCart = localStorage.getItem("cart");
     if (storedCart) setCart(JSON.parse(storedCart));
   }, [navigate]);
+
+  // Fetch current balance from backend
+  const fetchFreshBalance = async (customerId) => {
+    try {
+      setBalanceLoading(true);
+      const response = await client.get(`/users/${customerId}`);
+      
+      const storedCustomer = JSON.parse(localStorage.getItem("customer"));
+      const updatedCustomer = {
+        ...storedCustomer,
+        balance: response.data.balance
+      };
+      
+      setCustomer(updatedCustomer);
+      localStorage.setItem("customer", JSON.stringify(updatedCustomer));
+    } catch (error) {
+      console.error("❌ Failed to fetch balance:", error);
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
 
   const updateQuantity = (itemId, newQuantity) => {
     if (newQuantity <= 0) {
@@ -61,13 +88,7 @@ export default function OrderCheckout() {
   const tax = subtotal * 0.08;
   const total = subtotal + deliveryFee + tax;
 
-  // 🔹 Always read the freshest customer from localStorage
-  const storedCustomerFresh = localStorage.getItem("customer");
-  const activeCustomer = storedCustomerFresh
-    ? JSON.parse(storedCustomerFresh)
-    : customer;
-
-  const currentBalance = Number(activeCustomer?.balance ?? 0);
+  const currentBalance = Number(customer?.balance ?? 0);
   const remainingBalance = currentBalance - total;
   const hasSufficientFunds = remainingBalance >= 0;
 
@@ -97,27 +118,25 @@ export default function OrderCheckout() {
 
     try {
       const orderData = {
-        customer_id: activeCustomer?.customer_id || activeCustomer?.id,
+        customer_id: customer?.customer_id || customer?.user_id || customer?.id,
         items: cart.map((item) => ({
-          dish_id: item.id,
-          quantity: item.quantity,
-          price: item.price,
+          dish_id: parseInt(item.id) || parseInt(item.item_id),  // ✅ Convert to integer
+          quantity: parseInt(item.quantity),
+          price: parseFloat(item.price),
         })),
         delivery_address: `${addressLine1}, ${city}, ${stateRegion} ${zip}`,
         phone: phoneNumber,
-        total_amount: total,
+        total_amount: parseFloat(total.toFixed(2)),
       };
+
+      console.log("📦 Sending order data:", orderData);
 
       await client.post("/orders/", orderData);
+      
       alert("Order placed successfully!");
 
-      // 🔹 Update balance based on activeCustomer (fresh one)
-      const updatedCustomer = {
-        ...activeCustomer,
-        balance: remainingBalance,
-      };
-      setCustomer(updatedCustomer);
-      localStorage.setItem("customer", JSON.stringify(updatedCustomer));
+      // Refresh balance after order
+      await fetchFreshBalance(customer?.customer_id || customer?.user_id || customer?.id);
 
       setCart([]);
       localStorage.removeItem("cart");
@@ -129,11 +148,12 @@ export default function OrderCheckout() {
 
       navigate("/customer");
     } catch (error) {
-      console.error("Order error:", error);
-      alert(
-        error.response?.data?.error ||
-          "Failed to place order. Please try again."
-      );
+      console.error("❌ Order error:", error);
+      console.error("❌ Error details:", error.response?.data);
+      
+      // Show more helpful error message
+      const errorMsg = error.response?.data?.error || "Failed to place order";
+      alert(`Order failed: ${errorMsg}\n\nPlease check the console for details.`);
     } finally {
       setLoading(false);
     }
@@ -167,7 +187,6 @@ export default function OrderCheckout() {
   return (
     <div className="page">
       <div className="container">
-        {/* Back Button */}
         <button
           className="btn btn-secondary mb-3"
           onClick={() => navigate(-1)}
@@ -176,7 +195,6 @@ export default function OrderCheckout() {
           Back
         </button>
 
-        {/* Balance Card */}
         <div className="card card-sm mb-3">
           <div className="flex-between">
             <div>
@@ -190,7 +208,11 @@ export default function OrderCheckout() {
                 className="menu-price"
                 style={{ fontSize: "2rem", margin: 0 }}
               >
-                ${currentBalance.toFixed(2)}
+                {balanceLoading ? (
+                  <span style={{ color: "#a8a29e" }}>Loading...</span>
+                ) : (
+                  `$${currentBalance.toFixed(2)}`
+                )}
               </h2>
             </div>
             <button
@@ -204,12 +226,10 @@ export default function OrderCheckout() {
         </div>
 
         <div className="grid grid-2" style={{ alignItems: "start" }}>
-          {/* Left: Cart Items + Delivery */}
           <div
             className="flex"
             style={{ flexDirection: "column", gap: "20px" }}
           >
-            {/* Cart items */}
             <div className="card card-sm">
               <h3 className="title-md">Your Cart ({cart.length} items)</h3>
               <p className="text-muted text-small mb-3">
@@ -301,7 +321,6 @@ export default function OrderCheckout() {
               </div>
             </div>
 
-            {/* Delivery details */}
             <div className="card card-sm">
               <h3 className="title-md">Delivery Details</h3>
               <div
@@ -358,12 +377,10 @@ export default function OrderCheckout() {
             </div>
           </div>
 
-          {/* Right: Summary */}
           <div
             className="flex"
             style={{ flexDirection: "column", gap: "20px" }}
           >
-            {/* Order summary */}
             <div className="card card-sm">
               <h3 className="title-md">Order Summary</h3>
               <div
@@ -403,7 +420,6 @@ export default function OrderCheckout() {
               </div>
             </div>
 
-            {/* Balance Check */}
             <div className="card card-sm">
               <h3 className="title-md">Payment</h3>
 
@@ -421,7 +437,7 @@ export default function OrderCheckout() {
                 >
                   <span className="text-muted">Current Balance</span>
                   <span style={{ fontWeight: "600" }}>
-                    ${currentBalance.toFixed(2)}
+                    {balanceLoading ? "..." : `$${currentBalance.toFixed(2)}`}
                   </span>
                 </div>
                 <div
@@ -467,12 +483,11 @@ export default function OrderCheckout() {
                       color: hasSufficientFunds ? "#059669" : "#dc2626",
                     }}
                   >
-                    ${remainingBalance.toFixed(2)}
+                    {balanceLoading ? "..." : `$${remainingBalance.toFixed(2)}`}
                   </span>
                 </div>
 
-                {/* Insufficient Funds Warning */}
-                {!hasSufficientFunds && (
+                {!hasSufficientFunds && !balanceLoading && (
                   <div className="alert alert-error" style={{ marginTop: "10px" }}>
                     <div
                       className="flex gap-sm"
@@ -519,15 +534,17 @@ export default function OrderCheckout() {
                 type="button"
                 className="btn btn-primary btn-lg w-full"
                 onClick={handlePlaceOrder}
-                disabled={loading || !hasSufficientFunds}
+                disabled={loading || !hasSufficientFunds || balanceLoading}
                 style={{ marginTop: "15px" }}
               >
                 {loading
                   ? "Placing order..."
+                  : balanceLoading
+                  ? "Loading balance..."
                   : `Place Order · $${total.toFixed(2)}`}
               </button>
 
-              {!hasSufficientFunds && (
+              {!hasSufficientFunds && !balanceLoading && (
                 <p
                   className="text-small text-muted text-center"
                   style={{ marginTop: "10px" }}
@@ -542,4 +559,3 @@ export default function OrderCheckout() {
     </div>
   );
 }
-

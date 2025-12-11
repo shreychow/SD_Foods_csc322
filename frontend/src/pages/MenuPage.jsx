@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ShoppingCart, Search, ArrowLeft, Star, LogIn } from "lucide-react";
+import client from "../api/client";
 
 export default function MenuPage() {
   const navigate = useNavigate();
@@ -11,26 +12,57 @@ export default function MenuPage() {
   const [customer, setCustomer] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-
-  const menuItems = [
-    { id: "1", name: "Classic Cheeseburger", description: "Juicy beef patty with cheddar, lettuce, tomato, and special sauce", price: 12.99, category: "burgers", image: "https://images.unsplash.com/photo-1722125680299-783f98369451", rating: 4.5, popular: true },
-    { id: "2", name: "Margherita Pizza", description: "Fresh mozzarella, tomatoes, basil, and olive oil", price: 14.99, category: "pizza", image: "https://images.unsplash.com/photo-1667422542005-eb6909ac24c2", rating: 4.8, popular: true },
-    { id: "3", name: "Creamy Carbonara", description: "Italian pasta with pancetta, egg, and parmesan", price: 16.99, category: "pasta", image: "https://images.unsplash.com/photo-1749169337822-d875fd6f4c9d", rating: 4.6 },
-    { id: "4", name: "Caesar Salad", description: "Romaine, parmesan, croutons, caesar dressing", price: 9.99, category: "salads", image: "https://images.unsplash.com/photo-1651352650142-385087834d9d", rating: 4.3 },
-    { id: "5", name: "Sushi Platter", description: "Assorted sushi rolls with wasabi & ginger", price: 24.99, category: "sushi", image: "https://images.unsplash.com/photo-1700324822763-956100f79b0d", rating: 4.9, popular: true },
-    { id: "6", name: "Chocolate Lava Cake", description: "Warm chocolate cake with ice cream", price: 7.99, category: "desserts", image: "https://images.unsplash.com/photo-1655633584060-c875b9821061", rating: 4.7 }
-  ];
+  const [menuItems, setMenuItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     const stored = localStorage.getItem("customer");
     if (stored) {
       setCustomer(JSON.parse(stored));
     }
-    // Don't redirect - allow visitors to browse
 
     const storedCart = localStorage.getItem("cart");
     if (storedCart) setCart(JSON.parse(storedCart));
+
+    // ✅ FETCH MENU ITEMS FROM DATABASE
+    fetchMenuItems();
   }, []);
+
+  const fetchMenuItems = async () => {
+    try {
+      setLoading(true);
+      const response = await client.get('/menu');
+      
+      console.log("✅ Fetched menu items:", response.data);
+      
+      // Map database items to frontend format
+      const items = response.data.map(item => ({
+        id: item.item_id.toString(),  // ✅ Use item_id from database
+        item_id: item.item_id,          // ✅ Keep item_id for backend
+        name: item.name,
+        description: item.description || "Delicious dish from our kitchen",
+        price: parseFloat(item.price),
+        category: item.category_name ? item.category_name.toLowerCase() : "other",
+        image: item.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c',
+        rating: 4.5, // Default rating
+        popular: false,
+        in_stock: item.in_stock
+      }));
+
+      setMenuItems(items);
+
+      // Extract unique categories
+      const uniqueCategories = [...new Set(items.map(item => item.category))];
+      setCategories(['all', ...uniqueCategories]);
+
+    } catch (error) {
+      console.error("❌ Failed to fetch menu items:", error);
+      alert("Failed to load menu. Please refresh the page.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleQuantityChange = (itemId, delta) => {
     setQuantities(prev => ({ ...prev, [itemId]: Math.max(0, (prev[itemId] || 0) + delta) }));
@@ -51,7 +83,15 @@ export default function MenuPage() {
     if (existingItemIndex !== -1) {
       currentCart[existingItemIndex].quantity += quantity;
     } else {
-      currentCart.push({ id: item.id, name: item.name, price: item.price, quantity: quantity, image: item.image });
+      // ✅ Store with correct item_id from database
+      currentCart.push({ 
+        id: item.id,           // String version for cart operations
+        item_id: item.item_id, // Integer version for backend
+        name: item.name, 
+        price: item.price, 
+        quantity: quantity, 
+        image: item.image 
+      });
     }
 
     localStorage.setItem("cart", JSON.stringify(currentCart));
@@ -63,12 +103,22 @@ export default function MenuPage() {
   };
 
   const filtered = menuItems.filter(item => {
-    const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || item.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                       item.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchCategory = selectedCategory === "all" || item.category === selectedCategory;
-    return matchSearch && matchCategory;
+    const inStock = item.in_stock !== false; // Show items that are in stock
+    return matchSearch && matchCategory && inStock;
   });
 
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  if (loading) {
+    return (
+      <div className="page-center">
+        <p style={{ fontSize: "1.2rem", color: "#78716c" }}>Loading menu...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="page">
@@ -139,7 +189,7 @@ export default function MenuPage() {
 
       {/* Category Buttons */}
       <div style={{ display: "flex", gap: "12px", marginBottom: "30px", flexWrap: "wrap" }}>
-        {["all", "burgers", "pizza", "pasta", "salads", "sushi", "desserts"].map(cat => (
+        {categories.map(cat => (
           <button
             key={cat}
             className={selectedCategory === cat ? "tag" : "btn btn-secondary btn-sm"}
@@ -239,7 +289,7 @@ export default function MenuPage() {
       </div>
 
       {/* Empty State */}
-      {filtered.length === 0 && (
+      {filtered.length === 0 && !loading && (
         <div className="text-center mt-4">
           <p className="text-muted" style={{ fontSize: "1.1rem", marginBottom: "20px" }}>
             No matching menu items found.
