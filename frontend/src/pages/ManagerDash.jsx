@@ -20,7 +20,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import client from "../api/client";
-import KnowledgeReview from "../components/KnowledgeReview"; // 👈 ADDED
+import KnowledgeReview from "../components/KnowledgeReview"; 
 
 export default function ManagerDashboard() {
   const navigate = useNavigate();
