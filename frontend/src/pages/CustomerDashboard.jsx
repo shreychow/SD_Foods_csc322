@@ -109,7 +109,7 @@ export default function CustomerDashboard() {
       <div style={{ paddingTop: "140px", paddingBottom: "80px", textAlign: "center" }}>
         {customer.warnings > 0 && (
           <div className="alert alert-error" style={{ maxWidth: "550px", margin: "0 auto 30px" }}>
-            ⚠️ You have {customer.warnings} warning(s). Please review our policies.
+             You have {customer.warnings} warning(s). Please review our policies.
           </div>
         )}
 

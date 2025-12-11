@@ -3,13 +3,12 @@ import axios from 'axios';
 
 const client = axios.create({
   baseURL: 'http://localhost:5000/api',
-  timeout: 120000, // 2 minutes (was probably 10000 = 10 seconds)
+  timeout: 120000, 
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add request interceptor to include auth token if needed
 client.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');

@@ -56,7 +56,7 @@ export default function OrderCheckout() {
       setCustomer(updatedCustomer);
       localStorage.setItem("customer", JSON.stringify(updatedCustomer));
     } catch (error) {
-      console.error("❌ Failed to fetch balance:", error);
+      console.error("Failed to fetch balance:", error);
     } finally {
       setBalanceLoading(false);
     }
@@ -120,7 +120,7 @@ export default function OrderCheckout() {
       const orderData = {
         customer_id: customer?.customer_id || customer?.user_id || customer?.id,
         items: cart.map((item) => ({
-          dish_id: parseInt(item.id) || parseInt(item.item_id),  // ✅ Convert to integer
+          dish_id: parseInt(item.id) || parseInt(item.item_id),  // Convert to integer
           quantity: parseInt(item.quantity),
           price: parseFloat(item.price),
         })),
@@ -129,7 +129,7 @@ export default function OrderCheckout() {
         total_amount: parseFloat(total.toFixed(2)),
       };
 
-      console.log("📦 Sending order data:", orderData);
+      console.log("Sending order data:", orderData);
 
       await client.post("/orders/", orderData);
       
@@ -148,8 +148,8 @@ export default function OrderCheckout() {
 
       navigate("/customer");
     } catch (error) {
-      console.error("❌ Order error:", error);
-      console.error("❌ Error details:", error.response?.data);
+      console.error("Order error:", error);
+      console.error("Error details:", error.response?.data);
       
       // Show more helpful error message
       const errorMsg = error.response?.data?.error || "Failed to place order";

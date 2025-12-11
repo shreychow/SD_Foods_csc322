@@ -63,13 +63,13 @@ export default function WalletPage() {
     setLoading(true);
 
     try {
-      // ✅ FIXED: Use correct endpoint /users/{id}/balance
+      // Use correct endpoint /users/{id}/balance
       const response = await client.put(`/users/${customer?.customer_id || customer?.id}/balance`, {
         action: 'add',
         amount: depositAmount
       });
 
-      // ✅ FIXED: Get new_balance from response
+      // Get new_balance from response
       const newBalance = response.data.new_balance;
 
       // Update customer object with new balance

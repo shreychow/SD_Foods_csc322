@@ -37,7 +37,7 @@ export default function DeliveryDashboard() {
 
     try {
       const user = JSON.parse(stored);
-      console.log("👤 Logged in user:", user);
+      console.log("Logged in user:", user);
 
       // CRITICAL: Check role and redirect if wrong
       if (user.role === "customer") {
@@ -55,7 +55,7 @@ export default function DeliveryDashboard() {
 
       setDelivery(user);
       const driverId = user.user_id || user.id;
-      console.log("🚚 Driver ID:", driverId);
+      console.log("Driver ID:", driverId);
       loadData(driverId);
     } catch (err) {
       console.error("Error parsing user data:", err);
@@ -69,7 +69,7 @@ export default function DeliveryDashboard() {
 
     const driverId = delivery.user_id || delivery.id;
     const interval = setInterval(() => {
-      console.log("🔄 Auto-refreshing profile...");
+      console.log(" Auto-refreshing profile...");
       loadProfile(driverId);
     }, 5000); // Refresh every 5 seconds
 
@@ -96,7 +96,7 @@ export default function DeliveryDashboard() {
 
   const loadAvailableOrders = async () => {
     try {
-      console.log("📦 Loading available orders...");
+      console.log("Loading available orders...");
       const res = await client.get("/delivery/orders/available");
       console.log("Available orders response:", res.data);
 
@@ -131,7 +131,7 @@ export default function DeliveryDashboard() {
 
   const loadAssignedOrders = async (driverId) => {
     try {
-      console.log("📦 Loading assigned orders for driver:", driverId);
+      console.log(" Loading assigned orders for driver:", driverId);
       const res = await client.get(
         `/delivery/orders/assigned?driver_id=${driverId}`
       );
@@ -159,7 +159,7 @@ export default function DeliveryDashboard() {
 
   const loadProfile = async (driverId) => {
     try {
-      console.log("👤 Loading profile for driver:", driverId);
+      console.log("Loading profile for driver:", driverId);
       const res = await client.get(`/delivery/profile/${driverId}`);
       console.log("Profile loaded:", res.data);
       setProfile(res.data);
@@ -188,7 +188,7 @@ export default function DeliveryDashboard() {
 
     try {
       const driverId = delivery.user_id || delivery.id;
-      console.log("💰 Placing bid:", { orderId, driverId, bidAmount });
+      console.log("Placing bid:", { orderId, driverId, bidAmount });
 
       await client.post(`/delivery/orders/${orderId}/bid`, {
         driver_id: driverId,
@@ -580,7 +580,7 @@ export default function DeliveryDashboard() {
                         className="text-small text-muted"
                         style={{ margin: "5px 0" }}
                       >
-                        📞 {order.phone}
+                         {order.phone}
                       </p>
                       <p className="menu-price" style={{ margin: "10px 0" }}>
                         ${order.total_price.toFixed(2)}
@@ -640,7 +640,7 @@ export default function DeliveryDashboard() {
                         className="text-small text-muted"
                         style={{ margin: "5px 0" }}
                       >
-                        📞 {order.phone}
+                         {order.phone}
                       </p>
                       <p className="menu-price" style={{ margin: "10px 0" }}>
                         ${order.total_price.toFixed(2)}

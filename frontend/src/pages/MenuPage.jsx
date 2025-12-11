@@ -25,7 +25,7 @@ export default function MenuPage() {
     const storedCart = localStorage.getItem("cart");
     if (storedCart) setCart(JSON.parse(storedCart));
 
-    // ✅ FETCH MENU ITEMS FROM DATABASE
+    // FETCH MENU ITEMS FROM DATABASE
     fetchMenuItems();
   }, []);
 
@@ -34,12 +34,12 @@ export default function MenuPage() {
       setLoading(true);
       const response = await client.get('/menu');
       
-      console.log("✅ Fetched menu items:", response.data);
+      console.log("Fetched menu items:", response.data);
       
       // Map database items to frontend format
       const items = response.data.map(item => ({
-        id: item.item_id.toString(),  // ✅ Use item_id from database
-        item_id: item.item_id,          // ✅ Keep item_id for backend
+        id: item.item_id.toString(),  // Use item_id from database
+        item_id: item.item_id,          // Keep item_id for backend
         name: item.name,
         description: item.description || "Delicious dish from our kitchen",
         price: parseFloat(item.price),
@@ -57,7 +57,7 @@ export default function MenuPage() {
       setCategories(['all', ...uniqueCategories]);
 
     } catch (error) {
-      console.error("❌ Failed to fetch menu items:", error);
+      console.error(" Failed to fetch menu items:", error);
       alert("Failed to load menu. Please refresh the page.");
     } finally {
       setLoading(false);
@@ -83,7 +83,7 @@ export default function MenuPage() {
     if (existingItemIndex !== -1) {
       currentCart[existingItemIndex].quantity += quantity;
     } else {
-      // ✅ Store with correct item_id from database
+      // Store with correct item_id from database
       currentCart.push({ 
         id: item.id,           // String version for cart operations
         item_id: item.item_id, // Integer version for backend

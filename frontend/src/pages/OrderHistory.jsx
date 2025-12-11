@@ -22,7 +22,7 @@ const fetchOrders = async () => {
     setLoading(true);
     const customer = JSON.parse(localStorage.getItem("customer"));
 
-    console.log("1️⃣ Customer from localStorage:", customer);
+    console.log("Customer from localStorage:", customer);
 
     if (!customer) {
       navigate("/login");
@@ -30,16 +30,16 @@ const fetchOrders = async () => {
     }
 
     const customerId = customer.user_id || customer.customer_id || customer.id;
-    console.log("2️⃣ Using customerId:", customerId);
+    console.log("Using customerId:", customerId);
 
     const url = `/orders/history?customer_id=${customerId}`;
-    console.log("3️⃣ Calling URL:", url);
+    console.log("Calling URL:", url);
 
     const response = await client.get(url);
-    console.log("4️⃣ Response data:", response.data);
+    console.log("Response data:", response.data);
 
     if (!response.data || response.data.length === 0) {
-      console.log("5️⃣ No orders returned from API");
+      console.log("No orders returned from API");
       setOrders([]);
       return;
     }
@@ -54,11 +54,11 @@ const fetchOrders = async () => {
       deliveryRating: 0,
     }));
 
-    console.log("6️⃣ Mapped orders:", mappedOrders);
+    console.log("Mapped orders:", mappedOrders);
     setOrders(mappedOrders);
   } catch (error) {
-    console.error("❌ Error:", error);
-    console.error("❌ Error response:", error.response?.data);
+    console.error("Error:", error);
+    console.error("Error response:", error.response?.data);
     setOrders([]);
   } finally {
     setLoading(false);

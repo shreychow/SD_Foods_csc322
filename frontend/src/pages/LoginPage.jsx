@@ -20,7 +20,7 @@ export default function Login() {
 
     try {
       setLoading(true);
-      console.log("🔑 Attempting login:", { username });
+      console.log("Attempting login:", { username });
 
       const response = await client.post("/auth/login", {
         username: username,
@@ -28,31 +28,31 @@ export default function Login() {
       });
 
       const user = response.data;
-      console.log("✅ Login successful:", user);
-      console.log("👤 User role:", user.role);
+      console.log("Login successful:", user);
+      console.log(" User role:", user.role);
 
       // Save to localStorage
       localStorage.setItem("customer", JSON.stringify(user));
 
-      // ⭐ CRITICAL: Navigate based on role
+      // CRITICAL: Navigate based on role
       if (user.role === "chef") {
-        console.log("🍳 Redirecting to /chef");
+        console.log("Redirecting to /chef");
         navigate("/chef");
       } else if (user.role === "driver" || user.role === "delivery") {
-        console.log("🚚 Redirecting to /delivery");
+        console.log("Redirecting to /delivery");
         navigate("/delivery");
       } else if (user.role === "manager") {
-        console.log("👔 Redirecting to /manager");
+        console.log("Redirecting to /manager");
         navigate("/manager");
       } else if (user.role === "customer") {
-        console.log("🛒 Redirecting to /customer");
+        console.log("Redirecting to /customer");
         navigate("/customer");
       } else {
-        console.warn("⚠️ Unknown role, redirecting to home");
+        console.warn("Unknown role, redirecting to home");
         navigate("/");
       }
     } catch (error) {
-      console.error("❌ Login failed:", error);
+      console.error("Login failed:", error);
       alert(error.response?.data?.error || "Login failed. Please check your credentials.");
     } finally {
       setLoading(false);

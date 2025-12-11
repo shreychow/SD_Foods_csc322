@@ -90,7 +90,7 @@ export default function ChefDashboard() {
     try {
       const chefId = chef.user_id || chef.id;
       await client.post(`/chef/orders/${id}/accept`, {
-        chef_id: chefId, // ⭐ Send chef_id
+        chef_id: chefId, // Send chef_id
       });
       setOrders((prev) =>
         prev.map((o) => (o.id === id ? { ...o, status: "preparing" } : o))
