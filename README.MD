@@ -1,29 +1,66 @@
 # SD Foods - Restaurant Management System
 
-Full-stack restaurant system with delivery bidding, AI chat support, and feedback management.
+A full-stack restaurant management system featuring delivery bidding, AI chat support with voice input, VIP membership, and real-time feedback management.
 
 ---
-## Quick Setup
 
-### Requirements
-- Python 3.8+
-- Node.js 16+
-- MySQL 8.0+
-- Ollama
+## Features
 
-### Installation
+- **Customer Portal** - Browse menu, place orders, wallet system, VIP membership (5% discount), AI chatbot with voice input
+- **Chef Dashboard** - Accept/prepare orders, mark ready for delivery, view performance stats and feedback
+- **Delivery System** - Competitive bidding on deliveries, real-time order tracking, auto-refresh stats
+- **Manager Portal** - Approve delivery bids, manage VIP requests, handle feedback, employee management
+- **AI Chat** - Voice-enabled chatbot with knowledge base, learning from user interactions
+- **Feedback System** - Automated rating-to-feedback conversion, warning system, complaint management
 
-**1. Database**
+---
+
+## Tech Stack
+
+**Backend:** Flask 3.0, MySQL 8.0, Ollama (AI)  
+**Frontend:** React 18, Vite 5.0, React Router, Axios  
+**Database:** MySQL with delivery bidding, VIP requests, knowledge base  
+**AI Model:** Phi via Ollama
+
+---
+
+## Prerequisites
+
+Install the following software:
+
+- **MySQL 8.0+** - https://dev.mysql.com/downloads/mysql/
+- **Python 3.8+** - https://www.python.org/downloads/
+- **Node.js 16+** - https://nodejs.org/
+- **Ollama** - https://ollama.ai/download
+
+---
+
+## Installation
+
+### 1. Clone Repository
+```bash
+git clone <repository-url>
+cd sd-foods-restaurant
+```
+
+### 2. Database Setup
 ```bash
 mysql -u root -p
 CREATE DATABASE restaurant_database;
 USE restaurant_database;
-source backend_modular/schema_COMPLETE_WITH_AI.sql
+SOURCE new_backend/schema.sql;
+exit
 ```
 
-**2. Backend**
+Or use Python script:
 ```bash
-cd backend_modular
+cd new_backend
+python setup_database.py
+```
+
+### 3. Backend Setup
+```bash
+cd new_backend
 
 # Create .env file
 cat > .env << EOF
@@ -31,214 +68,143 @@ DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=your_mysql_password
 DB_NAME=restaurant_database
-FLASK_SECRET_KEY=your-secret-key-here
+FLASK_SECRET_KEY=change-this-secret-key
 EOF
 
 # Install dependencies
 pip install flask flask-cors mysql-connector-python ollama python-dotenv
 
-# Run server
+# Start server
 python app.py
 ```
-Runs on: http://localhost:5000
 
-**3. Frontend**
+Runs on http://localhost:5000
+
+### 4. Frontend Setup
 ```bash
 cd frontend
+
+# Install dependencies
 npm install
+
+# Start dev server
 npm run dev
 ```
-Runs on: http://localhost:5173
 
-**4. AI Chat**
+Runs on http://localhost:5173
+
+### 5. AI Setup
 ```bash
-ollama pull llama3.2
+# Download model (one-time, ~2GB)
+ollama pull Phi
+
+# Start server
 ollama serve
 ```
 
+Runs on http://localhost:11434
+
 ---
 
-## Environment Variables
+## Running the System
 
-Create a `.env` file in the `backend_modular/` folder:
+Keep 3 terminals open:
 
-```env
-# Database Configuration
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_mysql_password
-DB_NAME=restaurant_database
+1. **Backend:** `cd new_backend && python app.py`
+2. **Frontend:** `cd frontend && npm run dev`
+3. **AI Chat:** `ollama serve`
 
-# Flask Configuration
-FLASK_SECRET_KEY=your-secret-key-here
-```
-
-**Important:** Never commit `.env` to git. Add it to `.gitignore`:
-```
-# .gitignore
-.env
-__pycache__/
-*.pyc
-node_modules/
-```
+Open browser to http://localhost:5173
 
 ---
 
 ## Test Accounts
 
-| Role     | Username  | Password    |
-|----------|-----------|-------------|
-| Customer | john      | john        |
-| Chef     | chef1     | chef123     |
-| Driver   | driver1   | driver123   |
-| Manager  | manager   | manager123  |
+| Role     | Username       | Password    |
+|----------|----------------|-------------|
+| Chef     | Headchef       | chef123     |
+| Driver   | deliverydriver | delivery123 |
+| Manager  | manager        | manager123  |
 
 ---
 
-## Features
+## System Workflow
 
-**Customer**
-- Browse menu and place orders
-- Wallet system with VIP discount (5%)
-- Rate orders and give feedback
-- AI chatbot support with voice input
-- Submit complaints and compliments
-
-**Chef**
-- Accept and prepare orders
-- Mark orders ready for delivery
-- View stats and ratings
-- Receive feedback from customers
-
-**Delivery Driver**
-- Bid on available deliveries
-- Lowest bid highlighted
-- Pick up and deliver orders
-- Real-time stats updates
-- Submit feedback about customers
-
-**Manager**
-- Approve/reject delivery bids
-- Approve/reject VIP requests
-- Manage employees (promote/demote/fire)
-- Review and manage all feedback
-- Review AI chat knowledge base entries
+1. **Customer** places order → Uses wallet (VIP gets 5% off)
+2. **Chef** accepts and prepares → Marks ready for delivery
+3. **Drivers** place bids → Multiple drivers compete
+4. **Manager** approves bid → Lowest bid or higher with justification
+5. **Driver** delivers order → Updates status in real-time
+6. **Customer** rates order → Auto-generates feedback (4-5 stars = compliment, 1-3 = complaint)
+7. **AI Chat** assists users → Knowledge base + voice input
+8. **Manager** reviews feedback → Approves/dismisses complaints, manages warnings
 
 ---
 
-## Tech Stack
+## Key Packages
 
-- Backend: Flask + MySQL
-- Frontend: React + Vite
-- AI: Ollama (Model: Phi)
+**Python (requirements.txt):**
+- flask==3.0.0
+- flask-cors==4.0.0
+- mysql-connector-python==8.2.0
+- ollama==0.1.0
+- python-dotenv==1.0.0
 
----
-
-## Complete System Workflow
-
-**1. Customer places order**
-   - Browses menu and adds items to cart
-   - Uses wallet balance (VIP gets 5% discount)
-   - Order created with status: Pending
-
-**2. Chef accepts and prepares order**
-   - Chef sees order in dashboard
-   - Clicks "Accept" to start preparing
-   - Order status changes to: Preparing
-
-**3. Chef marks order ready for delivery**
-   - Chef completes cooking
-   - Marks order as "Ready for Delivery"
-   - Order now available for driver bidding
-
-**4. Drivers bid on the order**
-   - Multiple drivers see the order
-   - Each driver enters their bid amount
-   - System highlights the lowest bid
-   - Drivers can update their bids
-
-**5. Manager approves bid**
-   - Manager reviews all bids for each order
-   - Can approve lowest bid instantly
-   - Higher bids require written justification
-   - Approved driver gets order assigned
-
-**6. Driver delivers order**
-   - Driver picks up order from restaurant
-   - Updates status to "Out for Delivery"
-   - Delivers to customer address
-   - Marks order as "Delivered"
-
-**7. Customer rates food and delivery**
-   - Customer rates food quality (1-5 stars)
-   - Customer rates delivery service (1-5 stars)
-   - Ratings automatically generate feedback:
-     - 4-5 stars = Compliment
-     - 1-3 stars = Complaint
-
-**8. AI Chat & Feedback System**
-   
-   **AI Chatbot:**
-   - Customers can ask questions via text or voice input
-   - Voice recognition for hands-free interaction
-   - AI searches knowledge base first for accurate answers
-   - Falls back to general AI if no match found
-   - Users can rate responses (helpful/not helpful)
-   - Flagged responses go to manager for review
-   
-   **Feedback Management:**
-   - Customers can submit complaints about food or service
-   - Drivers can submit feedback about customers
-   - Chefs receive feedback on food quality
-   - Manager reviews all complaints
-   - Manager can approve (adds warning) or dismiss (warns reporter)
-   - Employees and customers see feedback in their dashboards
-   - Auto-refresh keeps feedback stats updated
-   
-   **Knowledge Base:**
-   - Users can submit new Q&A pairs
-   - Submissions go to manager for approval
-   - Manager reviews and approves/rejects entries
-   - Approved entries added to AI knowledge base
-   - System learns from user interactions
+**Node.js (package.json):**
+- react@18.2.0
+- react-router-dom@6.20.0
+- axios@1.6.0
+- vite@5.0.0
+- lucide-react@0.294.0
 
 ---
+
 ## Troubleshooting
 
-**Database connection failed**
+**Database connection failed:**
+- Check MySQL is running: `mysql -u root -p`
+- Verify password in `.env` file
+
+**Port conflicts:**
+- Backend (5000), Frontend (5173), MySQL (3306), Ollama (11434)
+- Change ports in config files if needed
+
+**Module not found:**
+- Backend: `pip install -r requirements.txt`
+- Frontend: `npm install`
+
+**AI not responding:**
+- Verify Ollama is running: `ollama list`
+- Restart: `ollama serve`
+
+**Blank pages:**
+- Clear cache: Ctrl+Shift+R
+- Check browser console (F12)
+
+---
+
+## For Teammates
+
+Share these files:
+- `schema.sql` - Database with test users
+- `.env.example` - Environment template
+- `db.py` - Auto-create database
+
+Run setup:
 ```bash
-# Check .env file exists and has correct password
-cat backend_modular/.env
-
-# Test MySQL connection
-mysql -u root -p restaurant_database
-```
-**AI chat not responding**
-```bash
-# Check Ollama is running
-ollama list
-ollama serve
-
-# Test model
-ollama run 'phi:latest'
+python db.py 
 ```
 
-**Voice input working**
-```
-# Ensure browser supports Web Speech API
-# Works in Chrome, Edge (not Firefox)
-# Check microphone permissions in browser settings
-```
+---
 
-**Module not found: python-dotenv**
-```bash
-pip install python-dotenv
-```
+## Development Notes
 
-**Clear browser cache**
-```
-Ctrl + Shift + R
-```
+- Backend uses Flask blueprints for modular routes
+- Frontend uses React Router for navigation
+- Database supports delivery bidding, VIP requests, AI knowledge base
+- Auto-refresh stats every 5 seconds in delivery dashboard
+- Voice input uses Web Speech API (Chrome/Edge only)
+- VIP customers get 5% discount and special privileges
 
 ---
 
