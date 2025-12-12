@@ -15,7 +15,7 @@ def get_db_connection():
         )
         return conn
     except mysql.connector.Error as e:
-        print(f"❌ Database connection error: {e}")
+        print(f" Database connection error: {e}")
         return None
 
 
@@ -31,13 +31,13 @@ def test_connection():
             result = cursor.fetchone()
             cursor.close()
             conn.close()
-            print("✅ Database connection successful!")
+            print("Database connection successful!")
             return True
         except Exception as e:
-            print(f"❌ Database test failed: {e}")
+            print(f"Database test failed: {e}")
             return False
     else:
-        print("❌ Failed to establish database connection")
+        print("Failed to establish database connection")
         return False
 
 
