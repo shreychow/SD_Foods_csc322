@@ -1,25 +1,11 @@
-# backend/routes/delivery.py
-
 from flask import Blueprint, request, jsonify
 from db import get_db_connection
-from decimal import Decimal
 
 delivery_bp = Blueprint("delivery", __name__)
 
-
-def _to_float(value):
-    return float(value) if isinstance(value, Decimal) else value
-
-
 @delivery_bp.route("/profile/<int:driver_id>", methods=["GET"])
 def get_driver_profile(driver_id):
-    """
-    Delivery profile:
-      - salary, warnings (users table)
-      - total_deliveries (orders table)
-      - compliments, complaints (feedback table)
-    """
-    conn = None
+    # get delivery driver info for profile page
     try:
         conn = get_db_connection()
         if not conn:
@@ -27,7 +13,7 @@ def get_driver_profile(driver_id):
 
         cursor = conn.cursor(dictionary=True)
 
-        # Basic user info
+        # get driver info from users table
         cursor.execute(
             """
             SELECT name, salary, amount_warnings
@@ -42,7 +28,7 @@ def get_driver_profile(driver_id):
             conn.close()
             return jsonify({"error": "Driver not found"}), 404
 
-        # Total deliveries (only completed)
+        # count how many deliveries this driver completed
         cursor.execute(
             """
             SELECT COUNT(*) AS total_deliveries
@@ -53,7 +39,7 @@ def get_driver_profile(driver_id):
         )
         deliveries_row = cursor.fetchone() or {"total_deliveries": 0}
 
-        # Complaints received
+        # count complaints from feedback table
         cursor.execute(
             """
             SELECT COUNT(*) AS complaints
@@ -64,7 +50,7 @@ def get_driver_profile(driver_id):
         )
         complaints_row = cursor.fetchone() or {"complaints": 0}
 
-        # Compliments received
+        # count compliments from feedback table
         cursor.execute(
             """
             SELECT COUNT(*) AS compliments
@@ -81,7 +67,7 @@ def get_driver_profile(driver_id):
         return jsonify(
             {
                 "name": user_row["name"],
-                "salary": _to_float(user_row["salary"]),
+                "salary": float(user_row["salary"]),
                 "warnings": user_row["amount_warnings"],
                 "total_deliveries": deliveries_row["total_deliveries"],
                 "complaints": complaints_row["complaints"],
@@ -90,19 +76,12 @@ def get_driver_profile(driver_id):
         ), 200
 
     except Exception as e:
-        if conn:
-            conn.close()
         print("get_driver_profile error:", e)
         return jsonify({"error": str(e)}), 400
 
-
 @delivery_bp.route("/orders/available", methods=["GET"])
 def get_available_orders():
-    """
-    Orders that are ready and NOT yet assigned to any driver (for bidding).
-    Includes bids for each order.
-    """
-    conn = None
+    # get orders that are ready for delivery and not assigned yet drivers should bid on these
     try:
         conn = get_db_connection()
         if not conn:
@@ -110,6 +89,7 @@ def get_available_orders():
 
         cursor = conn.cursor(dictionary=True)
 
+        # find orders  with no driver assigned
         cursor.execute(
             """
             SELECT
@@ -127,7 +107,7 @@ def get_available_orders():
         )
         orders = cursor.fetchall() or []
 
-        # Attach bids per order
+        # get all bids for each order
         for order in orders:
             cursor.execute(
                 """
@@ -145,10 +125,11 @@ def get_available_orders():
                 (order["order_id"],),
             )
             bids = cursor.fetchall() or []
+            # convert prices to float so they complatible with JSON
             for bid in bids:
-                bid["bid_amount"] = _to_float(bid["bid_amount"])
+                bid["bid_amount"] = float(bid["bid_amount"])
             order["bids"] = bids
-            order["total_price"] = _to_float(order["total_price"])
+            order["total_price"] = float(order["total_price"])
 
         cursor.close()
         conn.close()
@@ -156,18 +137,12 @@ def get_available_orders():
         return jsonify(orders), 200
 
     except Exception as e:
-        if conn:
-            conn.close()
         print("get_available_orders error:", e)
         return jsonify({"error": str(e)}), 400
 
-
 @delivery_bp.route("/orders/assigned", methods=["GET"])
 def get_assigned_orders():
-    """
-    Orders assigned to a given driver (ready or out for delivery).
-    """
-    conn = None
+    # get orders that are assigned to a specific driver
     try:
         driver_id = request.args.get("driver_id", type=int)
         if not driver_id:
@@ -179,6 +154,7 @@ def get_assigned_orders():
 
         cursor = conn.cursor(dictionary=True)
 
+        # find orders assigned to this driver that aren't delivered yet
         cursor.execute(
             """
             SELECT
@@ -198,27 +174,21 @@ def get_assigned_orders():
         )
         orders = cursor.fetchall() or []
         for order in orders:
-            order["total_price"] = _to_float(order["total_price"])
+            order["total_price"] = float(order["total_price"])
 
         cursor.close()
         conn.close()
         return jsonify(orders), 200
 
     except Exception as e:
-        if conn:
-            conn.close()
         print("get_assigned_orders error:", e)
         return jsonify({"error": str(e)}), 400
 
-
 @delivery_bp.route("/orders/<int:order_id>/bid", methods=["POST"])
 def place_bid(order_id):
-    """
-    Place or update a bid for a driver on an order.
-    """
-    conn = None
+    # driver places a bid on an order
     try:
-        data = request.json or {}
+        data = request.json
         driver_id = data.get("driver_id")
         bid_amount = data.get("bid_amount")
 
@@ -231,7 +201,7 @@ def place_bid(order_id):
 
         cursor = conn.cursor()
 
-        # Upsert style (if you have unique(order_id, driver_id) index)
+        # insert bid or update if driver already bid on this order
         cursor.execute(
             """
             INSERT INTO delivery_bids (order_id, driver_id, bid_amount, bid_status)
@@ -250,22 +220,14 @@ def place_bid(order_id):
         return jsonify({"message": "Bid placed/updated"}), 200
 
     except Exception as e:
-        if conn:
-            conn.rollback()
-            conn.close()
         print("place_bid error:", e)
         return jsonify({"error": str(e)}), 400
 
-
 @delivery_bp.route("/orders/<int:order_id>/pickup", methods=["POST"])
 def pickup_order(order_id):
-    """
-    Driver picks up an order -> mark as Out for Delivery.
-    If delivered_by is NULL, assign this driver.
-    """
-    conn = None
+    # driver picks up the order from restaurant
     try:
-        data = request.json or {}
+        data = request.json
         driver_id = data.get("driver_id")
         if not driver_id:
             return jsonify({"error": "driver_id is required"}), 400
@@ -276,7 +238,7 @@ def pickup_order(order_id):
 
         cursor = conn.cursor()
 
-        # Only update if either unassigned, or already assigned to this driver
+        # assign driver if not assigned yet, and mark as out for delivery
         cursor.execute(
             """
             UPDATE orders
@@ -300,19 +262,12 @@ def pickup_order(order_id):
         return jsonify({"message": "Order picked up"}), 200
 
     except Exception as e:
-        if conn:
-            conn.rollback()
-            conn.close()
         print("pickup_order error:", e)
         return jsonify({"error": str(e)}), 400
 
-
 @delivery_bp.route("/orders/<int:order_id>/deliver", methods=["POST"])
 def deliver_order(order_id):
-    """
-    Mark order as Delivered.
-    """
-    conn = None
+    # mark order as delivered
     try:
         conn = get_db_connection()
         if not conn:
@@ -320,6 +275,7 @@ def deliver_order(order_id):
 
         cursor = conn.cursor()
 
+        # change status to delivered
         cursor.execute(
             """
             UPDATE orders
@@ -342,8 +298,5 @@ def deliver_order(order_id):
         return jsonify({"message": "Order delivered"}), 200
 
     except Exception as e:
-        if conn:
-            conn.rollback()
-            conn.close()
         print("deliver_order error:", e)
         return jsonify({"error": str(e)}), 400
