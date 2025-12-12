@@ -1,9 +1,14 @@
+-- SD FOODS RESTAURANT DATABASE - COMPLETE SCHEMA WITH ALL TEST USERS
+
 CREATE DATABASE IF NOT EXISTS restaurant_database;
 USE restaurant_database;
 
+-- Drop existing tables 
 DROP TABLE IF EXISTS chat_ratings;
 DROP TABLE IF EXISTS chat_history;
 DROP TABLE IF EXISTS knowledge_base;
+DROP TABLE IF EXISTS delivery_bids;
+DROP TABLE IF EXISTS vip_requests;
 DROP TABLE IF EXISTS reviews;
 DROP TABLE IF EXISTS role_permissions;
 DROP TABLE IF EXISTS permissions;
@@ -12,33 +17,39 @@ DROP TABLE IF EXISTS feedback;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS order_items;
 DROP TABLE IF EXISTS payment;
+DROP TABLE IF EXISTS delivery_assignments;
 DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS menu_items;
 DROP TABLE IF EXISTS category;
 DROP TABLE IF EXISTS reservations;
 DROP TABLE IF EXISTS restaurant_tables;
 DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS delivery_bids
 
-/* USER TABLE */
+
+-- ============================================
+-- USERS TABLE
+-- ============================================
 CREATE TABLE users(
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL, 
-    password_hash VARCHAR (255) NOT NULL, 
+    password_hash VARCHAR(255) NOT NULL, 
     name VARCHAR(100) NOT NULL, 
     email VARCHAR(100) UNIQUE NOT NULL,
     phone VARCHAR(20),
     home_address VARCHAR(255) NOT NULL,
     role VARCHAR(50) NOT NULL,
-    total_balance INT NOT NULL,
+    total_balance DECIMAL(10,2) NOT NULL DEFAULT 0,
     salary DECIMAL(10,2) DEFAULT 0,
-    amount_warnings INT NOT NULL,
+    amount_warnings INT NOT NULL DEFAULT 0,
     vip_status BOOLEAN NOT NULL DEFAULT FALSE,
     is_blacklisted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-/* TABLES AVAILABLE */
+-- ============================================
+-- OTHER TABLES
+-- ============================================
+
 CREATE TABLE restaurant_tables (
     table_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     table_number INT NOT NULL UNIQUE,
@@ -48,28 +59,24 @@ CREATE TABLE restaurant_tables (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-/* CATEGORY TABLE */
 CREATE TABLE category(
     category_id INT AUTO_INCREMENT PRIMARY KEY,
     category_type VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-/* ROLE TABLE */
 CREATE TABLE role (
     role_id INT AUTO_INCREMENT PRIMARY KEY,
     role_type VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-/* PERMISSIONS TABLE */
 CREATE TABLE permissions(
     permissions_id INT AUTO_INCREMENT PRIMARY KEY,
     permissions_type VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-/* MENU TABLE */
 CREATE TABLE menu_items(
     item_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
@@ -88,7 +95,6 @@ CREATE TABLE menu_items(
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-/* RESERVATIONS TABLE */
 CREATE TABLE reservations(
     reservation_id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
@@ -96,7 +102,7 @@ CREATE TABLE reservations(
     reservation_date DATE NOT NULL,
     reservation_time TIME NOT NULL,
     duration INT NOT NULL,
-    reservation_status VARCHAR (50) NOT NULL, 
+    reservation_status VARCHAR(50) NOT NULL, 
     number_of_guest INT NOT NULL,
     special_request VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -104,12 +110,11 @@ CREATE TABLE reservations(
     FOREIGN KEY (table_id) REFERENCES restaurant_tables(table_id) ON DELETE CASCADE
 );
 
-/* ORDERS TABLE */
 CREATE TABLE orders(
     order_id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
-    prepared_by INT,
-    delivered_by INT,
+    prepared_by INT NULL,
+    delivered_by INT NULL,
     delivered_to VARCHAR(255) NOT NULL,
     FOREIGN KEY (customer_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (prepared_by) REFERENCES users(user_id) ON DELETE SET NULL,
@@ -118,10 +123,11 @@ CREATE TABLE orders(
     total_price DECIMAL(10,2) NOT NULL,
     delivery_date DATE NOT NULL,
     delivery_time TIME NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_delivered_by (delivered_by),
+    INDEX idx_prepared_by (prepared_by)
 );
 
-/* PAYMENT TABLE */
 CREATE TABLE payment(
     payment_id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
@@ -133,7 +139,6 @@ CREATE TABLE payment(
     FOREIGN KEY (payed_by) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
-/* ORDER ITEM TABLE */
 CREATE TABLE order_items(
     order_item_id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
@@ -145,7 +150,6 @@ CREATE TABLE order_items(
     FOREIGN KEY (item_id) REFERENCES menu_items(item_id) ON DELETE CASCADE
 );
 
-/* NOTIFICATION TABLE */
 CREATE TABLE notifications(
     notification_id INT AUTO_INCREMENT PRIMARY KEY,
     notify_user INT NOT NULL,
@@ -155,7 +159,6 @@ CREATE TABLE notifications(
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-/* FEEDBACK TABLE */
 CREATE TABLE feedback(
     feedback_id INT AUTO_INCREMENT PRIMARY KEY,
     feedback_from INT NOT NULL,
@@ -170,7 +173,6 @@ CREATE TABLE feedback(
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-/* ROLE_PERMISSIONS TABLE */
 CREATE TABLE role_permissions (
     role_id INT NOT NULL,
     permissions_id INT NOT NULL,
@@ -179,7 +181,6 @@ CREATE TABLE role_permissions (
     FOREIGN KEY (permissions_id) REFERENCES permissions(permissions_id) ON DELETE CASCADE
 );
 
-/* REVIEWS TABLE */
 CREATE TABLE reviews (
     review_id INT AUTO_INCREMENT PRIMARY KEY,
     message VARCHAR(255),
@@ -191,11 +192,10 @@ CREATE TABLE reviews (
     FOREIGN KEY (reviewed_by) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
-/* ============================================ */
-/* AI CHAT SYSTEM TABLES */
-/* ============================================ */
 
-/* KNOWLEDGE BASE TABLE */
+-- AI CHAT SYSTEM TABLES
+
+
 CREATE TABLE knowledge_base (
     kb_id INT AUTO_INCREMENT PRIMARY KEY,
     question VARCHAR(500) NOT NULL,
@@ -214,7 +214,6 @@ CREATE TABLE knowledge_base (
     INDEX idx_active (is_active)
 );
 
-/* CHAT HISTORY TABLE */
 CREATE TABLE chat_history (
     chat_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
@@ -231,7 +230,6 @@ CREATE TABLE chat_history (
     INDEX idx_source (source)
 );
 
-/* CHAT RATINGS TABLE */
 CREATE TABLE chat_ratings (
     rating_id INT AUTO_INCREMENT PRIMARY KEY,
     chat_id INT NOT NULL,
@@ -249,17 +247,64 @@ CREATE TABLE chat_ratings (
     INDEX idx_review_status (review_status)
 );
 
--- ============================================
--- SAMPLE DATA
--- ============================================
 
--- Insert sample users (password for all: "password123")
-INSERT INTO users (username, password_hash, name, email, phone, home_address, role, total_balance, salary, amount_warnings) VALUES
-('testuser', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYKYVMz3z2e', 'Test User', 'test@test.com', '1234567890', '123 Test St', 'customer', 500, 0, 0),
-('chef123', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYKYVMz3z2e', 'Head Chef', 'chef@sdfoods.com', '1234567891', '123 Kitchen St', 'chef', 0, 50000, 0),
-('driver123', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYKYVMz3z2e', 'Delivery Driver', 'driver@sdfoods.com', '1234567892', '123 Road St', 'driver', 0, 35000, 0),
-('admin123', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYKYVMz3z2e', 'Admin User', 'admin@sdfoods.com', '1234567893', '123 Office St', 'admin', 0, 75000, 0),
-('manager123', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYKYVMz3z2e', 'Restaurant Manager', 'manager@sdfoods.com', '1234567894', '123 Manager St', 'manager', 0, 65000, 0);
+-- DELIVERY BIDDING SYSTEM
+
+
+CREATE TABLE delivery_bids (
+    bid_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    driver_id INT NOT NULL,
+    bid_amount DECIMAL(10,2) NOT NULL,
+    bid_status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    justification TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    FOREIGN KEY (driver_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_order (order_id),
+    INDEX idx_driver (driver_id),
+    INDEX idx_status (bid_status)
+);
+
+
+-- VIP REQUESTS
+
+
+CREATE TABLE vip_requests (
+    request_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    request_status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    request_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reviewed_date TIMESTAMP NULL,
+    FOREIGN KEY (customer_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_status (request_status),
+    INDEX idx_customer (customer_id)
+);
+
+
+-- INSERT SAMPLE DATA
+
+
+-- ALL TEST USERS 
+INSERT INTO users (username, password_hash, name, email, phone, home_address, role, total_balance, salary, amount_warnings, vip_status) VALUES
+-- Customers
+('testuser', '$2b$12$sdaOVQmBeUJLYvEiI2QXFO5/HN2QZshqZjgMWyuhUQ6Uu1MsZ0Xaa', 'Test User', 'test@test.com', '1234567890', '123 Test St', 'customer', 1000.00, 0, 0, 0),
+('customer1', '$2b$12$A.IO1io9EsxavEM6K1aiHuV/eTrrMLqL2UWo0HpFaSQJFhWO6H5uG', 'Customer One', 'customer1@test.com', '1234567891', '124 Customer St', 'customer', 1000.00, 0, 0, 0),
+
+-- Chefs
+('chef123', '$2b$12$ILBE6BtEqTJe65.PRRQswOZPvBgZXNBSaw8Bl9hdpw4RSvIQz0e5C', 'Default Chef', 'chef@sdfoods.com', '1234567892', '125 Kitchen St', 'chef', 0, 3000.00, 0, 0),
+('Headchef', '$2b$12$JJESfhu0jNbRPxVXBkLPWOOos98zGBRbrcH1DIgudHZ9zO/cV3M2e', 'Head Chef 1', 'headchef1@sdfoods.com', '1234567893', '126 Kitchen Ave', 'chef', 0, 3000.00, 0, 0),
+('Headchef2', '$2b$12$0yX22rO29HAAvuZjq9800.wqnLssE1GaL7SUMwNCGd4Ig4dB0299y', 'Head Chef 2', 'headchef2@sdfoods.com', '1234567894', '127 Kitchen Ave', 'chef', 0, 3000.00, 0, 0),
+
+-- Delivery Drivers
+('driver123', '$2b$12$jj/nDvVEwjcJtYMbSGIaX.TSDSuHew9zQb5xQFF9De8jwdox1dhe.', 'Default Driver', 'driver@sdfoods.com', '1234567895', '128 Road St', 'driver', 0, 500.00, 0, 0),
+('deliverydriver', '$2b$12$0NWXYvV2dVzGpfB6Mt6ivuCWNZgJqbtZmVyq34AC2XbYs4aTsRxRq', 'Delivery Driver 1', 'driver1@sdfoods.com', '1234567896', '129 Road St', 'driver', 0, 500.00, 0, 0),
+('deliverydriver2', '$2b$12$JBnd39WZWcwGicUMIuvnL.af4LQ/AyIA1I48YhW1LVDkGDZ1A8hAm', 'Delivery Driver 2', 'driver2@sdfoods.com', '1234567897', '130 Road St', 'driver', 0, 500.00, 0, 0),
+
+-- Managers/Admins
+('admin123', '$2b$12$o3bBcavOOJRZ3eAt8YSmWuPkln5/JhDJN/bXXZtJBCgv9nsoZrRma', 'Admin User', 'admin@sdfoods.com', '1234567898', '131 Office St', 'admin', 0, 7500.00, 0, 0),
+('manager123', '$2b$12$yYL2CDC4NmdoWky60GzgtOtshIYqUtjGVmLCa6LriYnps91IEKt1C', 'Default Manager', 'manager@sdfoods.com', '1234567899', '132 Manager St', 'manager', 0, 5000.00, 0, 0),
+('manager', '$2b$12$rui5wKppwA3GRyWycRMBX.oSaNkDnGEJVTQPiM5fbSLhL9FRp.hnq', 'Restaurant Manager', 'manager2@sdfoods.com', '1234567900', '133 Manager St', 'manager', 0, 5000.00, 0, 0);
 
 -- Insert categories
 INSERT INTO category (category_type) VALUES 
@@ -281,171 +326,54 @@ INSERT INTO restaurant_tables (table_number, seating_capacity, area, is_availabl
 (7, 4, 'Patio', TRUE),
 (8, 2, 'Bar', TRUE);
 
--- Insert menu items
-INSERT INTO menu_items (name, description, price, category, created_by, updated_by, image_url, in_stock, is_time_limited, dietary_restrictions) VALUES 
+-- Insert menu items 
+INSERT INTO menu_items (name, description, price, category, created_by, updated_by, image_url, in_stock) VALUES 
 -- BURGERS
-('Classic Cheeseburger', 'Juicy beef patty with cheddar cheese, lettuce, tomato, and special sauce', 12.99, 1, 2, 2, 'https://images.unsplash.com/photo-1722125680299-783f98369451', TRUE, FALSE, FALSE),
-('Bacon Deluxe Burger', 'Double beef patty with crispy bacon, cheese, and caramelized onions', 15.99, 1, 2, 2, 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd', TRUE, FALSE, FALSE),
-('Veggie Burger', 'Plant-based patty with avocado, sprouts, and chipotle mayo', 11.99, 1, 2, 2, 'https://images.unsplash.com/photo-1520072959219-c595dc870360', TRUE, FALSE, TRUE),
+('Classic Cheeseburger', 'Juicy beef patty with cheddar cheese, lettuce, tomato', 12.99, 1, 3, 3, 'https://images.unsplash.com/photo-1722125680299-783f98369451', TRUE),
+('Bacon Deluxe Burger', 'Double beef patty with crispy bacon and cheese', 15.99, 1, 3, 3, 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd', TRUE),
+('Veggie Burger', 'Plant-based patty with avocado and sprouts', 11.99, 1, 3, 3, 'https://images.unsplash.com/photo-1520072959219-c595dc870360', TRUE),
 
 -- APPETIZERS
-('Mozzarella Sticks', 'Golden fried mozzarella with marinara sauce', 7.99, 2, 2, 2, 'https://images.unsplash.com/photo-1531749668029-2db88e4276c7', TRUE, FALSE, FALSE),
-('Loaded Nachos', 'Tortilla chips with cheese, jalapeños, sour cream, and guacamole', 9.99, 2, 2, 2, 'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d', TRUE, FALSE, FALSE),
-('Buffalo Wings', '10 crispy wings tossed in spicy buffalo sauce', 10.99, 2, 2, 2, 'https://images.unsplash.com/photo-1608039829572-78524f79c4c7', TRUE, FALSE, FALSE),
-
--- MAIN COURSE
-('Grilled Salmon', 'Fresh Atlantic salmon with lemon butter and seasonal vegetables', 18.99, 3, 2, 2, 'https://images.unsplash.com/photo-1467003909585-2f8a72700288', TRUE, FALSE, FALSE),
-('Chicken Alfredo Pasta', 'Fettuccine pasta in creamy Alfredo sauce with grilled chicken', 14.99, 3, 2, 2, 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9', TRUE, FALSE, FALSE),
-('Steak and Fries', '8oz ribeye steak cooked to perfection with seasoned fries', 22.99, 3, 2, 2, 'https://images.unsplash.com/photo-1600891964092-4316c288032e', TRUE, FALSE, FALSE),
+('Mozzarella Sticks', 'Golden fried mozzarella with marinara', 7.99, 2, 3, 3, 'https://images.unsplash.com/photo-1531749668029-2db88e4276c7', TRUE),
+('Loaded Nachos', 'Tortilla chips with cheese and jalapeños', 9.99, 2, 3, 3, 'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d', TRUE),
 
 -- DESSERTS
-('Chocolate Lava Cake', 'Warm chocolate cake with molten center, served with vanilla ice cream', 6.99, 4, 2, 2, 'https://images.unsplash.com/photo-1624353365286-3f8d62daad51', TRUE, FALSE, FALSE),
-('New York Cheesecake', 'Classic creamy cheesecake with berry compote', 5.99, 4, 2, 2, 'https://images.unsplash.com/photo-1533134242820-b8f73c8354e2', TRUE, FALSE, FALSE),
-('Apple Pie', 'Traditional apple pie with cinnamon and flaky crust', 4.99, 4, 2, 2, 'https://images.unsplash.com/photo-1535920527002-b35e96722eb9', TRUE, FALSE, FALSE),
+('Chocolate Lava Cake', 'Warm chocolate cake with ice cream', 6.99, 4, 3, 3, 'https://images.unsplash.com/photo-1624353365286-3f8d62daad51', TRUE),
+('Cheesecake', 'Classic creamy cheesecake', 5.99, 4, 3, 3, 'https://images.unsplash.com/photo-1533134242820-b8f73c8354e2', TRUE);
 
--- BEVERAGES
-('Fresh Lemonade', 'Homemade lemonade with mint', 3.99, 5, 2, 2, 'https://images.unsplash.com/photo-1523677011781-c91d1bbe2f04', TRUE, FALSE, FALSE),
-('Iced Coffee', 'Cold brew coffee with your choice of milk', 4.99, 5, 2, 2, 'https://images.unsplash.com/photo-1517487881594-2787fef5ebf7', TRUE, FALSE, FALSE),
-('Milkshake', 'Thick and creamy - vanilla, chocolate, or strawberry', 5.99, 5, 2, 2, 'https://images.unsplash.com/photo-1572490122747-3968b75cc699', TRUE, FALSE, FALSE),
-
--- SIDES
-('French Fries', 'Crispy golden fries with sea salt', 3.99, 6, 2, 2, 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877', TRUE, FALSE, FALSE),
-('Onion Rings', 'Beer-battered onion rings with ranch dipping sauce', 4.99, 6, 2, 2, 'https://images.unsplash.com/photo-1639024471283-03518883512d', TRUE, FALSE, FALSE),
-('Caesar Salad', 'Romaine lettuce, parmesan, croutons, and Caesar dressing', 6.99, 6, 2, 2, 'https://images.unsplash.com/photo-1546793665-c74683f339c1', TRUE, FALSE, FALSE);
-
--- Insert sample knowledge base entries
+-- Insert knowledge base
 INSERT INTO knowledge_base (question, answer, category, created_by) VALUES
-('What are your hours?', 'We are open daily from 11:00 AM to 10:00 PM. Delivery service is available until 9:30 PM.', 'Hours', 2),
-('Do you offer delivery?', 'Yes! We offer delivery within a 5-mile radius. Delivery typically takes 30-45 minutes and costs $3.99.', 'Delivery', 2),
-('What payment methods do you accept?', 'We accept all major credit cards, debit cards, and online payment through our wallet system. You can deposit money into your wallet for faster checkout.', 'Payment', 2),
-('Are there vegetarian options?', 'Yes! We have several vegetarian options including our Veggie Burger, Caesar Salad, and more. Look for items marked with dietary restrictions.', 'Menu', 2),
-('How do I become a VIP customer?', 'You can become a VIP by either spending over $100 total or completing 3 orders without any complaints. VIP members get 5% off all orders and 1 free delivery every 3 orders!', 'VIP', 2),
-('What is your refund policy?', 'If you are not satisfied with your order, please contact us immediately. We offer full refunds for orders rejected by our chefs or if there are quality issues.', 'Policy', 2),
-('Can I track my order?', 'Yes! Once your order is confirmed, you can track its status in the Orders section. You will see when the chef is preparing your food and when the delivery person picks it up.', 'Orders', 2),
-('Do you have gluten-free options?', 'Yes, we offer gluten-free options. Please check the dietary restrictions on each menu item or ask our AI assistant for specific dishes.', 'Menu', 2),
-('How do I add money to my wallet?', 'Go to the Wallet page and click "Add Funds". You can deposit money using any major credit or debit card. The minimum deposit is $5.', 'Wallet', 2),
-('Can I cancel my order?', 'Orders can be cancelled within 5 minutes of placing them. After that, the chef has already started preparing your food. Contact our manager for special cases.', 'Orders', 2);
+('What are your hours?', 'We are open daily from 11:00 AM to 10:00 PM.', 'Hours', 3),
+('Do you offer delivery?', 'Yes! We offer delivery within 5 miles. Delivery takes 30-45 minutes.', 'Delivery', 3),
+('How do I become VIP?', 'Spend over $100 or complete 3 orders. VIP gets 5% off all orders!', 'VIP', 3),
+('Can I track my order?', 'Yes! Check the Orders section to see your order status in real-time.', 'Orders', 3);
 
--- Verify data
+
+-- VERIFY 
+
+
 SELECT 'Database setup complete!' as message;
 SELECT COUNT(*) as total_users FROM users;
 SELECT COUNT(*) as total_menu_items FROM menu_items;
 SELECT COUNT(*) as total_categories FROM category;
-SELECT COUNT(*) as total_tables FROM restaurant_tables;
-SELECT COUNT(*) as total_knowledge FROM knowledge_base;
 
--- Add delivery_bids table for bidding system
--- Run this in your MySQL database
-
-CREATE TABLE IF NOT EXISTS delivery_bids (
-    bid_id INT AUTO_INCREMENT PRIMARY KEY,
-    order_id INT NOT NULL,
-    driver_id INT NOT NULL,
-    bid_amount DECIMAL(10,2) NOT NULL,
-    bid_status VARCHAR(50) NOT NULL DEFAULT 'pending',
-    justification TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
-    FOREIGN KEY (driver_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    INDEX idx_order (order_id),
-    INDEX idx_driver (driver_id),
-    INDEX idx_status (bid_status)
-);
-
--- Add index to orders.delivered_by for faster queries
-CREATE INDEX idx_delivered_by ON orders(delivered_by);
-
-SELECT 'Delivery bidding table created successfully!' as message;
-
--- Delivery Bids Table
-CREATE TABLE IF NOT EXISTS delivery_bids (
-    bid_id INT AUTO_INCREMENT PRIMARY KEY,
-    order_id INT NOT NULL,
-    driver_id INT NOT NULL,
-    bid_amount DECIMAL(10, 2) NOT NULL,
-    bid_status ENUM('pending', 'accepted', 'rejected') DEFAULT 'pending',
-    bid_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
-    FOREIGN KEY (driver_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    UNIQUE KEY unique_bid (order_id, driver_id)
-);
-
--- Delivery Assignments Table (for tracking)
-CREATE TABLE IF NOT EXISTS delivery_assignments (
-    assignment_id INT AUTO_INCREMENT PRIMARY KEY,
-    order_id INT NOT NULL,
-    driver_id INT NOT NULL,
-    manager_id INT,
-    bid_amount DECIMAL(10, 2),
-    justification TEXT,
-    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    picked_up_at TIMESTAMP NULL,
-    delivered_at TIMESTAMP NULL,
-    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
-    FOREIGN KEY (driver_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (manager_id) REFERENCES users(user_id) ON DELETE SET NULL
-);
-
--- Add delivered_at column to orders if not exists
-ALTER TABLE orders 
-ADD COLUMN IF NOT EXISTS delivered_at TIMESTAMP NULL;
-
--- Add bid_time column if not exists to delivery_bids
-ALTER TABLE delivery_bids 
-ADD COLUMN IF NOT EXISTS bid_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
-
-USE restaurant_database;
-
--- Allow delivered_by to be NULL
-ALTER TABLE orders 
-MODIFY COLUMN delivered_by INT NULL;
-
--- Also make sure prepared_by can be NULL
-ALTER TABLE orders 
-MODIFY COLUMN prepared_by INT NULL;
-
--- Change role from 'delivery' to 'driver'
-UPDATE users 
-SET role = 'driver' 
-WHERE user_id IN (10, 11);
-
--- Verify the change
-SELECT user_id, name, username, role FROM users WHERE user_id IN (10, 11);
-UPDATE users SET role = 'driver' WHERE user_id IN (10, 11);
-
-
--- Fix ALL roles at once
-UPDATE users SET role = 'chef' WHERE username IN ('Headchef', 'Headchef2');
-UPDATE users SET role = 'driver' WHERE username IN ('deliverydriver', 'deliverydriver2');
-UPDATE users SET role = 'manager' WHERE username = 'manager';
-
--- Verify the fix
-SELECT user_id, username, role 
-FROM users 
-WHERE username IN ('Headchef', 'Headchef2', 'deliverydriver', 'deliverydriver2', 'manager');
-
-
-USE restaurant_database;
-
--- Create VIP requests table
-CREATE TABLE IF NOT EXISTS vip_requests (
-    request_id INT AUTO_INCREMENT PRIMARY KEY,
-    customer_id INT NOT NULL,
-    request_status VARCHAR(50) NOT NULL DEFAULT 'pending',
-    request_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    reviewed_date TIMESTAMP NULL,
-    FOREIGN KEY (customer_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    INDEX idx_status (request_status),
-    INDEX idx_customer (customer_id)
-);
-
-
-INSERT INTO vip_requests (customer_id, request_status)
-SELECT user_id, 'pending'
+-- Show all fake accounts made
+SELECT 
+    user_id,
+    username,
+    password_hash as password,
+    role,
+    name
 FROM users
-WHERE role = 'customer' AND vip_status = 0
-LIMIT 2;
+ORDER BY role, user_id;
 
-SELECT * FROM vip_requests;
 
-SELECT user_id, name, vip_status FROM users WHERE vip_status = 1;
+
+
+
+
+
+
+
+
+
