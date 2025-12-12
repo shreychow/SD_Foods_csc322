@@ -45,6 +45,7 @@ cd sd-foods-restaurant
 
 ### 2. Database Setup
 ```bash
+cd database
 mysql -u root -p
 CREATE DATABASE restaurant_database;
 USE restaurant_database;
