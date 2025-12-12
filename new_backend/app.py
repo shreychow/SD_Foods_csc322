@@ -33,7 +33,6 @@ def create_app():
     app.register_blueprint(users_bp, url_prefix='/api/users')
     app.register_blueprint(menu_bp, url_prefix='/api/menu')
     app.register_blueprint(orders_bp, url_prefix='/api/orders')
-    app.register_blueprint(reservations_bp, url_prefix='/api/reservations')
     app.register_blueprint(feedback_bp, url_prefix='/api/feedback')
     app.register_blueprint(chat_bp, url_prefix='/api/chat')
     app.register_blueprint(chef_bp, url_prefix='/api/chef')
