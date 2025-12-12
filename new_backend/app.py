@@ -7,7 +7,6 @@ from routes.auth import auth_bp
 from routes.users import users_bp
 from routes.menu import menu_bp
 from routes.orders import orders_bp
-from routes.reservations import reservations_bp
 from routes.feedback import feedback_bp
 from routes.chat import chat_bp
 from routes.chef import chef_bp
