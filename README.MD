@@ -49,14 +49,14 @@ cd database
 mysql -u root -p
 CREATE DATABASE restaurant_database;
 USE restaurant_database;
-SOURCE new_backend/schema.sql;
+SOURCE database/schema.sql;
 exit
 ```
 
 Or use Python script:
 ```bash
 cd new_backend
-python setup_database.py
+python db.py
 ```
 
 ### 3. Backend Setup
