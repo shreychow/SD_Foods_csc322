@@ -220,10 +220,10 @@ ollama list
 ollama serve
 
 # Test model
-ollama run llama3.2
+ollama run 'phi:latest'
 ```
 
-**Voice input not working**
+**Voice input working**
 ```
 # Ensure browser supports Web Speech API
 # Works in Chrome, Edge (not Firefox)
